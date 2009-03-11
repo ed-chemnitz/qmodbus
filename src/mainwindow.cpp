@@ -165,8 +165,11 @@ void MainWindow::changeSerialPort( int )
 	QList<QextPortInfo> ports = QextSerialEnumerator::getPorts();
 	QSettings settings;
 	settings.setValue( "serialinterface", ports[iface].friendName );
+#ifdef Q_OS_WIN32
 	const QString port = embracedString( ports[iface].friendName ) + ":";
-
+#else
+	const QString port = ports[iface].physName;
+#endif
 	if( m_mbParam )
 	{
 		modbus_close( m_mbParam );
