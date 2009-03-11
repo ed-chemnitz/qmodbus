@@ -1,26 +1,28 @@
-# -------------------------------------------------
-# Project created by QtCreator 2009-03-09T12:58:20
-# -------------------------------------------------
 TARGET = QModBus
 TEMPLATE = app
-SOURCES += main.cpp \
-    mainwindow.cpp \
-    qextserialport.cpp \
-    qextserialenumerator.cpp \
-    qextserialbase.cpp \
-    modbus.c
-HEADERS += mainwindow.h \
-    qextserialport.h \
-    qextserialenumerator.h \
-    qextserialbase.h \
-    modbus.h
-unix:HEADERS += posix_qextserialport.h
-unix:SOURCES += posix_qextserialport.cpp
+SOURCES += src/main.cpp \
+    src/mainwindow.cpp \
+    3rdparty/qextserialport/qextserialport.cpp \
+    3rdparty/qextserialport/qextserialenumerator.cpp \
+    3rdparty/qextserialport/qextserialbase.cpp \
+    3rdparty/libmodbus/modbus.c
+HEADERS += src/mainwindow.h \
+    3rdparty/qextserialport/qextserialport.h \
+    3rdparty/qextserialport/qextserialenumerator.h \
+    3rdparty/qextserialport/qextserialbase.h \
+    3rdparty/libmodbus/modbus.h
+
+INCLUDEPATH += 3rdparty/libmodbus 3rdparty/qextserialport
+
+unix:HEADERS += 3rdparty/qextserialport/posix_qextserialport.h
+unix:SOURCES += 3rdparty/qextserialport/posix_qextserialport.cpp
 unix:DEFINES += _TTY_POSIX_
-win32:HEADERS += win_qextserialport.h
-win32:SOURCES += win_qextserialport.cpp
+win32:HEADERS += 3rdparty/qextserialport/win_qextserialport.h
+win32:SOURCES += 3rdparty/qextserialport/win_qextserialport.cpp
 win32:DEFINES += _TTY_WIN_
 win32:LIBS += -lsetupapi
-FORMS += mainwindow.ui \
-    about.ui
-RESOURCES += qmodbus.qrc
+
+FORMS += forms/mainwindow.ui \
+    forms/about.ui
+
+RESOURCES += data/qmodbus.qrc
