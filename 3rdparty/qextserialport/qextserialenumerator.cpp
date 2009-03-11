@@ -6,6 +6,8 @@
 
 #include "qextserialenumerator.h"
 
+#include <QtCore/QDir>
+
 #ifdef _TTY_WIN_
 
     #include <objbase.h>
@@ -150,7 +152,19 @@ QList<QextPortInfo> QextSerialEnumerator::getPorts()
 			setupAPIScan(ports);
 	#endif /*_TTY_WIN_*/
 	#ifdef _TTY_POSIX_
-		qCritical("Enumeration for POSIX systems is not implemented yet.");
+		QFileInfoList serialPortDevFiles =
+			QDir( "/dev" ).entryInfoList(
+				QStringList() << "ttyS*" << "ttyUSB*",
+				QDir::Files | QDir::System );
+		foreach( const QFileInfo & f, serialPortDevFiles )
+		{
+			QextPortInfo info;
+			info.friendName = f.fileName();
+			info.physName = f.absoluteFilePath();
+			info.enumName = f.fileName();
+			info.portName = f.fileName();
+			ports += info;
+		}
 	#endif /*_TTY_POSIX_*/
 
 	return ports;
