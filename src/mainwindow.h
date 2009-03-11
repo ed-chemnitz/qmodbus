@@ -48,7 +48,8 @@ public:
 		QDialog( _parent )
 	{
 		setupUi( this );
-		aboutTextLabel->setText( aboutTextLabel->text().arg( "0.1.0" ) );
+		aboutTextLabel->setText(
+			aboutTextLabel->text().arg( "0.1.0" ) );
 	}
 } ;
 
