@@ -1,0 +1,7 @@
+QModBus can be easily built using QMake:
+
+qmake
+make
+
+and that's it. Alternatively open the project with QtCreator.
+
