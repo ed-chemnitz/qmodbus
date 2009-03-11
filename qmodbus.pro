@@ -1,5 +1,6 @@
 TARGET = QModBus
 TEMPLATE = app
+VERSION = 0.1.0
 SOURCES += src/main.cpp \
     src/mainwindow.cpp \
     3rdparty/qextserialport/qextserialport.cpp \
