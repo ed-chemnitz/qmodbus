@@ -107,6 +107,10 @@ MainWindow::MainWindow( QWidget * _parent ) :
 	ui->statusBar->addWidget( m_statusInd );
 	ui->statusBar->addWidget( m_statusText, 10 );
 	resetStatus();
+
+	QTimer * t = new QTimer( this );
+	connect( t, SIGNAL(timeout()), this, SLOT(pollForDataOnBus()));
+	t->start( 100 );
 }
 
 
@@ -119,7 +123,7 @@ MainWindow::~MainWindow()
 
 
 
-void MainWindow::busMonitorAddItem( bool isOut,
+void MainWindow::busMonitorAddItem( bool isRequest,
 					uint8_t slave,
 					uint8_t func,
 					uint16_t addr,
@@ -130,7 +134,7 @@ void MainWindow::busMonitorAddItem( bool isOut,
 	const int rowCount = bm->rowCount();
 	bm->setRowCount( rowCount+1 );
 
-	QTableWidgetItem * ioItem = new QTableWidgetItem( isOut ? tr( "out" ) : tr( "in" ) );
+	QTableWidgetItem * ioItem = new QTableWidgetItem( isRequest ? tr( "Req >>" ) : tr( "<< Resp" ) );
 	QTableWidgetItem * slaveItem = new QTableWidgetItem( QString::number( slave ) );
 	QTableWidgetItem * funcItem = new QTableWidgetItem( QString::number( func ) );
 	QTableWidgetItem * addrItem = new QTableWidgetItem( QString::number( addr ) );
@@ -466,6 +470,14 @@ void MainWindow::resetStatus( void )
 
 
 
+void MainWindow::pollForDataOnBus( void )
+{
+	modbus_poll( m_mbParam );
+}
+
+
+
+
 void MainWindow::aboutQModBus( void )
 {
 	AboutDialog( this ).exec();
@@ -475,9 +487,9 @@ void MainWindow::aboutQModBus( void )
 
 extern "C" {
 
-void busMonitorAddItem( uint8_t isOut, uint8_t slave, uint8_t func, uint16_t addr, uint16_t nb, uint16_t crc )
+void busMonitorAddItem( uint8_t isRequest, uint8_t slave, uint8_t func, uint16_t addr, uint16_t nb, uint16_t crc )
 {
-	globalMainWin->busMonitorAddItem( isOut, slave, func, addr, nb, crc );
+	globalMainWin->busMonitorAddItem( isRequest, slave, func, addr, nb, crc );
 }
 
 void busMonitorRawData( uint8_t * data, uint8_t dataLen )

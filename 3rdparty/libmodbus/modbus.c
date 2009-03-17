@@ -570,7 +570,8 @@ static int win32_ser_read(struct win32_ser *ws, char *p_msg, unsigned int max_le
 */
 static int receive_msg(modbus_param_t *mb_param,
 		       int msg_length_computed,
-		       uint8_t *msg, int *p_msg_length)
+		       uint8_t *msg, int *p_msg_length,
+		       int timeout_usec)
 {
 	int select_ret;
 	int read_ret;
@@ -599,8 +600,8 @@ static int receive_msg(modbus_param_t *mb_param,
 
 	if (msg_length_computed == MSG_LENGTH_UNDEFINED) {
 		/* Wait for a message */
-		tv.tv_sec = 60;
-		tv.tv_usec = 0;
+		tv.tv_sec = timeout_usec / ( 1000*1000 );
+		tv.tv_usec = timeout_usec % ( 1000*1000 );
 
 		/* The message length is undefined (query receiving) so
 		 * we need to analyse the message step by step.
@@ -735,7 +736,7 @@ static int modbus_receive(modbus_param_t *mb_param,
 
 	response_length_computed = compute_response_length(mb_param, query);
 	ret = receive_msg(mb_param, response_length_computed,
-			  response, &response_length);
+			  response, &response_length, TIME_OUT_DEFAULT);
 	if( response_length > 0 )
 	{
 		busMonitorRawData( response, response_length );
@@ -1098,12 +1099,12 @@ void modbus_manage_query(modbus_param_t *mb_param, const uint8_t *query,
    - 0 if OK, or a negative error number if the request fails
    - query, message received
    - query_length, length in bytes of the message */
-int modbus_listen(modbus_param_t *mb_param, uint8_t *query, int *query_length)
+int modbus_listen(modbus_param_t *mb_param, uint8_t *query, int *query_length, int timeout)
 {
 	int ret;
 
 	/* The length of the query to receive isn't known. */
-	ret = receive_msg(mb_param, MSG_LENGTH_UNDEFINED, query, query_length);
+	ret = receive_msg(mb_param, MSG_LENGTH_UNDEFINED, query, query_length, timeout);
 
 	return ret;
 }
@@ -2213,4 +2214,40 @@ uint8_t get_byte_from_bits(const uint8_t *src, int address, int nb_bits)
 	}
 
 	return value;
+}
+
+
+void modbus_poll(modbus_param_t*mb_param)
+{
+	uint8_t msg[MAX_MESSAGE_LENGTH];
+	int msg_len = MAX_MESSAGE_LENGTH;
+	int ret = modbus_listen( mb_param, msg, &msg_len, 1000 );	// wait for 1 ms
+	if( ret >= 0 )
+	{
+		busMonitorRawData( msg, msg_len );
+		const int o = mb_param->header_length;
+		int ql = compute_query_length_header( msg[o+1] ) +
+				compute_query_length_data( mb_param, msg );
+		int rl = compute_response_length( mb_param, msg );
+		if( msg_len == ql )
+		{
+			busMonitorAddItem( 1,					/* is query */
+						msg[o+0],			/* slave */
+						msg[o+1],			/* func */
+						( msg[o+2] << 8 ) | msg[o+3],	/* addr */
+						( msg[o+4] << 8 ) | msg[o+5],	/* nb */
+						0 /* CRC */
+					);
+		}
+		else if( msg_len == rl )
+		{
+			busMonitorAddItem( 0,					/* is query */
+					   msg[o+0],				/* slave */
+					   msg[o+1],				/* func */
+						0,				/* addr */
+						( msg[o+4] << 8 ) | msg[o+5],	/* nb */
+						0				/* CRC */
+					);
+		}
+	}
 }

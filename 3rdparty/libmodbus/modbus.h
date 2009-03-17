@@ -73,6 +73,7 @@ extern "C" {
 /* Time out between trames in microsecond */
 #define TIME_OUT_BEGIN_OF_TRAME 500000
 #define TIME_OUT_END_OF_TRAME   500000
+#define TIME_OUT_DEFAULT	10000000
 
 #ifndef FALSE
 #define FALSE 0
@@ -315,7 +316,11 @@ int modbus_init_listen_tcp(modbus_param_t *mb_param);
 
 /* Listens for any query from a modbus master in TCP
    Not tested in RTU communication. */
-int modbus_listen(modbus_param_t *mb_param, uint8_t *query, int *query_length);
+int modbus_listen(modbus_param_t *mb_param, uint8_t *query, int *query_length, int timeout_usec);
+
+/* calls modbus_listen() with small timeout and checks whether received data
+   is a query or response - used for bus-monitoring*/
+void modbus_poll(modbus_param_t *mb_param);
 
 /* Manages the received query.
    Analyses the query and constructs a response.

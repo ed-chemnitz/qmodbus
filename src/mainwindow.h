@@ -61,7 +61,7 @@ public:
 	MainWindow( QWidget * parent = 0 );
 	~MainWindow();
 
-	void busMonitorAddItem( bool isOut,
+	void busMonitorAddItem( bool isRequest,
 				uint8_t slave,
 				uint8_t func,
 				uint16_t addr,
@@ -76,6 +76,7 @@ private slots:
 	void updateRegisterView( void );
 	void sendModbusRequest( void );
 	void resetStatus( void );
+	void pollForDataOnBus( void );
 	void aboutQModBus( void );
 
 
