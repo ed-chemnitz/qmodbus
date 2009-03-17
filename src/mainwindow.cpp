@@ -315,7 +315,7 @@ void MainWindow::sendModbusRequest( void )
 	const int func = stringToHex( embracedString(
 					ui->functionCode->currentText() ) );
 	const int addr = ui->startAddr->value();
-	const int num = ui->numCoils->value();
+	int num = ui->numCoils->value();
 	uint8_t dest[1024];
 	uint16_t * dest16 = (uint16_t *) dest;
 
@@ -351,12 +351,14 @@ void MainWindow::sendModbusRequest( void )
 					ui->regTable->item( 0, DataColumn )->
 						text().toInt() ? 1 : 0 );
 			writeAccess = true;
+			num = 1;
 			break;
 		case FC_PRESET_SINGLE_REGISTER:
 			ret = preset_single_register( m_mbParam, slave, addr,
 					ui->regTable->item( 0, DataColumn )->
 						text().toInt() );
 			writeAccess = true;
+			num = 1;
 			break;
 
 		case FC_FORCE_MULTIPLE_COILS:
