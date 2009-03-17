@@ -14,7 +14,7 @@
    <string>About QModBus</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="qmodbus.qrc">
+   <iconset resource="../data/qmodbus.qrc">
     <normaloff>:/images/logo.png</normaloff>:/images/logo.png</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -34,7 +34,7 @@
           </size>
          </property>
          <property name="pixmap">
-          <pixmap resource="qmodbus.qrc">:/images/logo.png</pixmap>
+          <pixmap resource="../data/qmodbus.qrc">:/images/logo.png</pixmap>
          </property>
          <property name="scaledContents">
           <bool>true</bool>
@@ -145,8 +145,7 @@ This program is published under GPL.</string>
   </layout>
  </widget>
  <resources>
-  <include location="qmodbus.qrc"/>
-  <include location="tekaservice.qrc"/>
+  <include location="../data/qmodbus.qrc"/>
  </resources>
  <connections>
   <connection>
