@@ -2,7 +2,7 @@
  * main.cpp - main file for QModBus
  *
  * Copyright (c) 2009 Tobias Doerffel / Electronic Design Chemnitz
- * 
+ *
  * This file is part of QModBus - http://qmodbus.sourceforge.net
  *
  * This program is free software; you can redistribute it and/or
@@ -26,6 +26,8 @@
 #include <QtGui/QApplication>
 #include "mainwindow.h"
 
+MainWindow * globalMainWin = NULL;
+
 int main(int argc, char *argv[])
 {
 	QApplication a(argc, argv);
@@ -36,6 +38,8 @@ int main(int argc, char *argv[])
 
 	MainWindow w;
 	w.show();
+
+	globalMainWin = &w;
 
 	return a.exec();
 }

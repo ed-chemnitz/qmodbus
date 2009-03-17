@@ -141,6 +141,17 @@ static uint8_t table_crc_lo[] = {
 	0x43, 0x83, 0x41, 0x81, 0x80, 0x40
 };
 
+
+extern void busMonitorAddItem( uint8_t isOut,
+				uint8_t slave,
+				uint8_t func,
+				uint16_t addr,
+				uint16_t nb,
+				uint16_t crc );
+extern void busMonitorRawData( uint8_t * data,
+				uint8_t dataLen );
+
+
 /* Treats errors and flush or close connection if necessary */
 static void error_treat(modbus_param_t *mb_param, int code, const char *string)
 {
@@ -375,6 +386,10 @@ static int modbus_send(modbus_param_t *mb_param, uint8_t *query,
 	} else {
 		set_message_length_tcp(query, query_length);
 	}
+	busMonitorAddItem( 1, query[0], query[1],
+				( query[2] << 8 ) + query[3],
+				( query[4] << 8 ) + query[5],
+				s_crc );
 
 	if (mb_param->debug) {
 		for (i = 0; i < query_length; i++)
@@ -699,6 +714,7 @@ static int receive_msg(modbus_param_t *mb_param,
 }
 
 
+
 /* Receives the response and checks values (and checksum in RTU).
 
    Returns:
@@ -720,11 +736,16 @@ static int modbus_receive(modbus_param_t *mb_param,
 	response_length_computed = compute_response_length(mb_param, query);
 	ret = receive_msg(mb_param, response_length_computed,
 			  response, &response_length);
+	if( response_length > 0 )
+	{
+		busMonitorRawData( response, response_length );
+	}
 	if (ret == 0) {
 		/* GOOD RESPONSE */
 		int query_nb_value;
 		int response_nb_value;
-
+		int data_len = -1;
+		int nb = 0;
 		/* The number of values is returned if it's corresponding
 		 * to the query */
 		switch (response[offset + 1]) {
@@ -733,7 +754,7 @@ static int modbus_receive(modbus_param_t *mb_param,
 			/* Read functions, 8 values in a byte (nb
 			 * of values in the query and byte count in
 			 * the response. */
-			query_nb_value = (query[offset+4] << 8) + query[offset+5];
+			nb = query_nb_value = (query[offset+4] << 8) + query[offset+5];
 			query_nb_value = (query_nb_value / 8) + ((query_nb_value % 8) ? 1 : 0);
 			response_nb_value = response[offset + 2];
 			break;
@@ -742,12 +763,16 @@ static int modbus_receive(modbus_param_t *mb_param,
 			/* Read functions 1 value = 2 bytes */
 			query_nb_value = (query[offset+4] << 8) + query[offset+5];
 			response_nb_value = (response[offset + 2] / 2);
+			nb = response_nb_value;
+			data_len = response[offset + 2];
 			break;
 		case FC_FORCE_MULTIPLE_COILS:
 		case FC_PRESET_MULTIPLE_REGISTERS:
 			/* N Write functions */
 			query_nb_value = (query[offset+4] << 8) + query[offset+5];
 			response_nb_value = (response[offset + 4] << 8) | response[offset + 5];
+			nb = response_nb_value;
+			data_len = 3;
 			break;
 		case FC_REPORT_SLAVE_ID:
 			/* Report slave ID (bytes received) */
@@ -757,7 +782,14 @@ static int modbus_receive(modbus_param_t *mb_param,
 			/* 1 Write functions & others */
 			query_nb_value = response_nb_value = 1;
 		}
-
+		if( data_len < 0 )
+		{
+			data_len = response_nb_value;
+		}
+		busMonitorAddItem( 0, response[offset+0], response[offset+1],
+					0, nb,
+					( response[offset+3+data_len] << 8 ) |
+								response[offset+4+data_len] );
 		if (query_nb_value == response_nb_value) {
 			ret = response_nb_value;
 		} else {
@@ -776,6 +808,11 @@ static int modbus_receive(modbus_param_t *mb_param,
 			/* Optimization allowed because exception response is
 			   the smallest trame in modbus protocol (3) so always
 			   raise a timeout error */
+
+			busMonitorAddItem( 0, response[offset+0], response[offset+1],
+					0, 0,
+					( response[response_length-2] << 8 ) |
+								response[response_length-1] );
 
 			/* CRC must be checked here (not done in receive_msg) */
 			if (mb_param->type_com == RTU) {

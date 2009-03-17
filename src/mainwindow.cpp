@@ -2,7 +2,7 @@
  * mainwindow.cpp - implementation of MainWindow class
  *
  * Copyright (c) 2009 Tobias Doerffel / Electronic Design Chemnitz
- * 
+ *
  * This file is part of QModBus - http://qmodbus.sourceforge.net
  *
  * This program is free software; you can redistribute it and/or
@@ -26,6 +26,7 @@
 #include <QtCore/QDebug>
 #include <QtCore/QTimer>
 #include <QtGui/QMessageBox>
+#include <QtGui/QScrollBar>
 
 #include "mainwindow.h"
 #include "modbus.h"
@@ -36,6 +37,8 @@
 const int DataTypeColumn = 0;
 const int AddrColumn = 1;
 const int DataColumn = 2;
+
+extern MainWindow * globalMainWin;
 
 
 MainWindow::MainWindow( QWidget * _parent ) :
@@ -112,6 +115,58 @@ MainWindow::MainWindow( QWidget * _parent ) :
 MainWindow::~MainWindow()
 {
 	delete ui;
+}
+
+
+
+void MainWindow::busMonitorAddItem( bool isOut,
+					uint8_t slave,
+					uint8_t func,
+					uint16_t addr,
+					uint16_t nb,
+					uint16_t crc )
+{
+	QTableWidget * bm = ui->busMonTable;
+	const int rowCount = bm->rowCount();
+	bm->setRowCount( rowCount+1 );
+
+	QTableWidgetItem * ioItem = new QTableWidgetItem( isOut ? tr( "out" ) : tr( "in" ) );
+	QTableWidgetItem * slaveItem = new QTableWidgetItem( QString::number( slave ) );
+	QTableWidgetItem * funcItem = new QTableWidgetItem( QString::number( func ) );
+	QTableWidgetItem * addrItem = new QTableWidgetItem( QString::number( addr ) );
+	QTableWidgetItem * numItem = new QTableWidgetItem( QString::number( nb ) );
+	QTableWidgetItem * crcItem = new QTableWidgetItem( QString().sprintf( "%.4x", crc ) );
+	ioItem->setFlags( ioItem->flags() & ~Qt::ItemIsEditable );
+	slaveItem->setFlags( slaveItem->flags() & ~Qt::ItemIsEditable );
+	funcItem->setFlags( funcItem->flags() & ~Qt::ItemIsEditable );
+	addrItem->setFlags( addrItem->flags() & ~Qt::ItemIsEditable );
+	numItem->setFlags( numItem->flags() & ~Qt::ItemIsEditable );
+	crcItem->setFlags( crcItem->flags() & ~Qt::ItemIsEditable );
+	bm->setItem( rowCount, 0, ioItem );
+	bm->setItem( rowCount, 1, slaveItem );
+	bm->setItem( rowCount, 2, funcItem );
+	bm->setItem( rowCount, 3, addrItem );
+	bm->setItem( rowCount, 4, numItem );
+	bm->setItem( rowCount, 5, crcItem );
+}
+
+
+
+
+void MainWindow::busMonitorRawData( uint8_t * data, uint8_t dataLen )
+{
+	QString dump = ui->rawData->toPlainText();
+	if( !dump.isEmpty() )
+	{
+		dump += "\n";
+	}
+	for( int i = 0; i < dataLen; ++i )
+	{
+		dump += QString().sprintf( "%.2x ", data[i] );
+	}
+	ui->rawData->setPlainText( dump );
+	ui->rawData->verticalScrollBar()->setValue( 100000 );
+	ui->rawData->setLineWrapMode( QPlainTextEdit::NoWrap );
 }
 
 
@@ -357,7 +412,7 @@ void MainWindow::sendModbusRequest( void )
 				QTableWidgetItem * dtItem =
 					new QTableWidgetItem( dataType );
 				QTableWidgetItem * addrItem =
-					new QTableWidgetItem( 
+					new QTableWidgetItem(
 						QString::number( addr+i ) );
 				QTableWidgetItem * dataItem =
 					new QTableWidgetItem(
@@ -414,3 +469,18 @@ void MainWindow::aboutQModBus( void )
 	AboutDialog( this ).exec();
 }
 
+
+
+extern "C" {
+
+void busMonitorAddItem( uint8_t isOut, uint8_t slave, uint8_t func, uint16_t addr, uint16_t nb, uint16_t crc )
+{
+	globalMainWin->busMonitorAddItem( isOut, slave, func, addr, nb, crc );
+}
+
+void busMonitorRawData( uint8_t * data, uint8_t dataLen )
+{
+	globalMainWin->busMonitorRawData( data, dataLen );
+}
+
+}
