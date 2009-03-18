@@ -93,6 +93,9 @@ MainWindow::MainWindow( QWidget * _parent ) :
 	connect( ui->sendBtn, SIGNAL( clicked() ),
 			this, SLOT( sendModbusRequest() ) );
 
+	connect( ui->clearBusMonTable, SIGNAL( clicked() ),
+			this, SLOT( clearBusMonTable() ) );
+
 	connect( ui->actionAbout_QModBus, SIGNAL( triggered() ),
 			this, SLOT( aboutQModBus() ) );
 
@@ -153,6 +156,7 @@ void MainWindow::busMonitorAddItem( bool isRequest,
 	bm->setItem( rowCount, 3, addrItem );
 	bm->setItem( rowCount, 4, numItem );
 	bm->setItem( rowCount, 5, crcItem );
+	bm->verticalScrollBar()->setValue( 100000 );
 }
 
 
@@ -248,6 +252,14 @@ void MainWindow::changeSerialPort( int )
 		QMessageBox::critical( this, tr( "Connection failed" ),
 				tr( "Could not connect serial port!" ) );
 	}
+}
+
+
+
+
+void MainWindow::clearBusMonTable( void )
+{
+	ui->busMonTable->setRowCount( 0 );
 }
 
 

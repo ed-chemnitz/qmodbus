@@ -180,15 +180,35 @@
       <property name="title">
        <string>Bus Monitor</string>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item>
+      <layout class="QGridLayout" name="gridLayout_4">
+       <item row="0" column="0">
         <widget class="QLabel" name="label_10">
          <property name="text">
           <string>Raw data received:</string>
          </property>
         </widget>
        </item>
-       <item>
+       <item row="0" column="1" colspan="2">
+        <spacer name="horizontalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>201</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="0" column="3">
+        <widget class="QPushButton" name="clearBusRawData">
+         <property name="text">
+          <string>Clear</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0" colspan="4">
         <widget class="QPlainTextEdit" name="rawData">
          <property name="font">
           <font>
@@ -204,7 +224,7 @@
          </property>
         </widget>
        </item>
-       <item>
+       <item row="2" column="0">
         <spacer name="verticalSpacer_2">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -220,14 +240,14 @@
          </property>
         </spacer>
        </item>
-       <item>
+       <item row="3" column="0" colspan="4">
         <widget class="Line" name="line">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
-       <item>
+       <item row="4" column="0" rowspan="2">
         <spacer name="verticalSpacer_3">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -243,14 +263,34 @@
          </property>
         </spacer>
        </item>
-       <item>
+       <item row="6" column="0" colspan="2">
         <widget class="QLabel" name="label_11">
          <property name="text">
           <string>ModBus requests/responses:</string>
          </property>
         </widget>
        </item>
-       <item>
+       <item row="5" column="2" rowspan="2">
+        <spacer name="horizontalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>156</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="5" column="3" rowspan="2">
+        <widget class="QPushButton" name="clearBusMonTable">
+         <property name="text">
+          <string>Clear</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0" colspan="4">
         <widget class="QTableWidget" name="busMonTable">
          <property name="editTriggers">
           <set>QAbstractItemView::NoEditTriggers</set>
@@ -591,6 +631,22 @@
     <hint type="destinationlabel">
      <x>214</x>
      <y>236</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>clearBusRawData</sender>
+   <signal>clicked()</signal>
+   <receiver>rawData</receiver>
+   <slot>clear()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>833</x>
+     <y>65</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>669</x>
+     <y>186</y>
     </hint>
    </hints>
   </connection>

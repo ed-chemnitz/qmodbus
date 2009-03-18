@@ -72,6 +72,7 @@ public:
 
 private slots:
 	void changeSerialPort( int );
+	void clearBusMonTable( void );
 	void updateRequestPreview( void );
 	void updateRegisterView( void );
 	void sendModbusRequest( void );
