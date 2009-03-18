@@ -730,7 +730,7 @@ static int modbus_receive(modbus_param_t *mb_param,
 			  uint8_t *response)
 {
 	int ret;
-	int response_length;
+	int response_length = 0;
 	int response_length_computed;
 	int offset = mb_param->header_length;
 
