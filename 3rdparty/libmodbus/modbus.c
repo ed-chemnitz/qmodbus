@@ -376,7 +376,7 @@ static int modbus_send(modbus_param_t *mb_param, uint8_t *query,
 		       int query_length)
 {
 	int ret;
-	uint16_t s_crc;
+	uint16_t s_crc = 0;
 	int i;
 
 	if (mb_param->type_com == RTU) {
