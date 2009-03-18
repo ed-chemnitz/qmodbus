@@ -2220,34 +2220,64 @@ uint8_t get_byte_from_bits(const uint8_t *src, int address, int nb_bits)
 void modbus_poll(modbus_param_t*mb_param)
 {
 	uint8_t msg[MAX_MESSAGE_LENGTH];
-	int msg_len = MAX_MESSAGE_LENGTH;
-	int ret = modbus_listen( mb_param, msg, &msg_len, 1000 );	// wait for 1 ms
-	if( ret >= 0 )
+	int msg_len = 0;
+	const int ret = modbus_listen( mb_param, msg, &msg_len, 1000 );	// wait for 1 ms
+	if( ( ret == COMM_TIME_OUT && msg_len > 0 ) || ret >= 0 )
 	{
 		busMonitorRawData( msg, msg_len );
+
 		const int o = mb_param->header_length;
-		int ql = compute_query_length_header( msg[o+1] ) +
-				compute_query_length_data( mb_param, msg );
-		int rl = compute_response_length( mb_param, msg );
-		if( msg_len == ql )
+		const int slave = msg[o+0];
+		const int func = msg[o+1];
+		const int datalen = msg_len - mb_param->header_length - mb_param->checksum_length - 2;
+		int addr = 0;
+		int nb = -1;
+		int isQuery = 1;
+		switch( func )
 		{
-			busMonitorAddItem( 1,					/* is query */
-						msg[o+0],			/* slave */
-						msg[o+1],			/* func */
-						( msg[o+2] << 8 ) | msg[o+3],	/* addr */
-						( msg[o+4] << 8 ) | msg[o+5],	/* nb */
-						0 /* CRC */
-					);
+			case FC_READ_COIL_STATUS:
+			case FC_READ_INPUT_STATUS:
+				if( msg[o+2] == datalen-1 )
+				{
+					isQuery = 0;
+					nb = (datalen-1) * 8;
+				}
+				break;
+			case FC_READ_HOLDING_REGISTERS:
+			case FC_READ_INPUT_REGISTERS:
+				if( msg[o+2] == datalen-1 )
+				{
+					isQuery = 0;
+					nb = (datalen-1) / 2;
+				}
+				break;
+			case FC_FORCE_SINGLE_COIL:
+			case FC_PRESET_SINGLE_REGISTER:
+				// can't decide from message whether it is a query or response
+				isQuery = 0;
+				nb = 1;
+				addr = ( msg[o+2] << 8 ) | msg[o+3];
+				break;
+			case FC_REPORT_SLAVE_ID:
+				nb = 0;
+			case FC_PRESET_MULTIPLE_REGISTERS:
+			case FC_FORCE_MULTIPLE_COILS:
+			default:
+				// can't decide from message whether it is a query or response
+				isQuery = 0;
+				break;
 		}
-		else if( msg_len == rl )
+		if( nb == -1 )	// is query or a write-response?
 		{
-			busMonitorAddItem( 0,					/* is query */
-					   msg[o+0],				/* slave */
-					   msg[o+1],				/* func */
-						0,				/* addr */
-						( msg[o+4] << 8 ) | msg[o+5],	/* nb */
-						0				/* CRC */
-					);
+			addr = ( msg[o+2] << 8 ) | msg[o+3];
+			nb = ( msg[o+4] << 8 ) | msg[o+5];
 		}
+		busMonitorAddItem( isQuery,				/* is query */
+					slave,				/* slave */
+					func,				/* func */
+					addr,				/* addr */
+					nb,				/* nb */
+					( msg[msg_len-2] << 8 ) | msg[msg_len-1]	/* CRC */
+				);
 	}
 }
