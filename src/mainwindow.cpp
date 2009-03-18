@@ -98,6 +98,7 @@ MainWindow::MainWindow( QWidget * _parent ) :
 
 	changeSerialPort( portIndex );
 	updateRegisterView();
+	updateRequestPreview();
 
 	ui->regTable->setColumnWidth( 0, 150 );
 
@@ -254,16 +255,32 @@ void MainWindow::changeSerialPort( int )
 
 void MainWindow::updateRequestPreview( void )
 {
-	ui->requestPreview->setText(
-			QString().sprintf( "%.2x  %.2x  %.2x %.2x  %.2x %.2x",
-					ui->slaveID->value(),
-					stringToHex( embracedString(
+	const int slave = ui->slaveID->value();
+	const int func = stringToHex( embracedString(
 						ui->functionCode->
-							currentText() ) ),
-					ui->startAddr->value() >> 8,
-					ui->startAddr->value() & 0xff,
-					ui->numCoils->value() >> 8,
-					ui->numCoils->value() & 0xff ) );
+							currentText() ) );
+	const int addr = ui->startAddr->value();
+	const int num = ui->numCoils->value();
+	if( func == FC_FORCE_SINGLE_COIL || func == FC_PRESET_SINGLE_REGISTER )
+	{
+		ui->requestPreview->setText(
+			QString().sprintf( "%.2x  %.2x  %.2x %.2x ",
+					slave,
+					func,
+					addr >> 8,
+					addr & 0xff ) );
+	}
+	else
+	{
+		ui->requestPreview->setText(
+			QString().sprintf( "%.2x  %.2x  %.2x %.2x  %.2x %.2x",
+					slave,
+					func,
+					addr >> 8,
+					addr & 0xff,
+					num >> 8,
+					num & 0xff ) );
+	}
 }
 
 
