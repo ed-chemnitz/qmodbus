@@ -227,30 +227,41 @@ void MainWindow::changeSerialPort( int )
 	const int iface = ui->serialPort->currentIndex();
 
 	QList<QextPortInfo> ports = QextSerialEnumerator::getPorts();
-	QSettings settings;
-	settings.setValue( "serialinterface", ports[iface].friendName );
-#ifdef Q_OS_WIN32
-	const QString port = embracedString( ports[iface].friendName ) + ":";
-#else
-	const QString port = ports[iface].physName;
-#endif
-	if( m_mbParam )
+	if( !ports.isEmpty() )
 	{
-		modbus_close( m_mbParam );
-		delete m_mbParam;
-	}
+		QSettings settings;
+		settings.setValue( "serialinterface", ports[iface].friendName );
+#ifdef Q_OS_WIN32
+		const QString port = embracedString( ports[iface].friendName ) +
+									":";
+#else
+		const QString port = ports[iface].physName;
+#endif
 
-	m_mbParam = new modbus_param_t;
-	modbus_init_rtu( m_mbParam, port.toAscii().constData(),
+		if( m_mbParam )
+		{
+			modbus_close( m_mbParam );
+			delete m_mbParam;
+		}
+
+		m_mbParam = new modbus_param_t;
+		modbus_init_rtu( m_mbParam, port.toAscii().constData(),
 				ui->baud->currentText().toInt(),
 				ui->parity->currentText().toAscii().constData(),
 				ui->dataBits->currentText().toInt(),
 				ui->stopBits->currentText().toInt() );
 
-	if( modbus_connect( m_mbParam ) == -1 )
-	{
-		QMessageBox::critical( this, tr( "Connection failed" ),
+		if( modbus_connect( m_mbParam ) == -1 )
+		{
+			QMessageBox::critical( this, tr( "Connection failed" ),
 				tr( "Could not connect serial port!" ) );
+		}
+	}
+	else
+	{
+		QMessageBox::critical( this, tr( "No serial port found" ),
+				tr( "Could not find any serial port "
+						"on this computer!" ) );
 	}
 }
 
@@ -301,7 +312,7 @@ void MainWindow::updateRequestPreview( void )
 void MainWindow::updateRegisterView( void )
 {
 	const int func = stringToHex( embracedString(
-						ui->functionCode->currentText() ) );
+					ui->functionCode->currentText() ) );
 	const QString dataType = descriptiveDataTypeName( func );
 	const int addr = ui->startAddr->value();
 
@@ -344,6 +355,11 @@ void MainWindow::updateRegisterView( void )
 
 void MainWindow::sendModbusRequest( void )
 {
+	if( m_mbParam == NULL )
+	{
+		return;
+	}
+
 	const int slave = ui->slaveID->value();
 	const int func = stringToHex( embracedString(
 					ui->functionCode->currentText() ) );
@@ -501,7 +517,10 @@ void MainWindow::resetStatus( void )
 
 void MainWindow::pollForDataOnBus( void )
 {
-	modbus_poll( m_mbParam );
+	if( m_mbParam )
+	{
+		modbus_poll( m_mbParam );
+	}
 }
 
 
