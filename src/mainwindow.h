@@ -75,6 +75,7 @@ private slots:
 	void clearBusMonTable( void );
 	void updateRequestPreview( void );
 	void updateRegisterView( void );
+	void enableHexView( void );
 	void sendModbusRequest( void );
 	void resetStatus( void );
 	void pollForDataOnBus( void );

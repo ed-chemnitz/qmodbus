@@ -99,9 +99,13 @@ MainWindow::MainWindow( QWidget * _parent ) :
 	connect( ui->actionAbout_QModBus, SIGNAL( triggered() ),
 			this, SLOT( aboutQModBus() ) );
 
+	connect( ui->functionCode, SIGNAL( currentIndexChanged( int ) ),
+		this, SLOT( enableHexView() ) );
+
 	changeSerialPort( portIndex );
 	updateRegisterView();
 	updateRequestPreview();
+        enableHexView();
 
 	ui->regTable->setColumnWidth( 0, 150 );
 
@@ -351,6 +355,17 @@ void MainWindow::updateRegisterView( void )
 }
 
 
+void MainWindow::enableHexView( void )
+{
+	const int func = stringToHex( embracedString(
+					ui->functionCode->currentText() ) );
+
+	bool b_enabled =
+		func == FC_READ_HOLDING_REGISTERS ||
+		func == FC_READ_INPUT_REGISTERS;
+
+	ui->checkBoxHexData->setEnabled( b_enabled );
+}
 
 
 void MainWindow::sendModbusRequest( void )
@@ -398,14 +413,14 @@ void MainWindow::sendModbusRequest( void )
 		case FC_FORCE_SINGLE_COIL:
 			ret = force_single_coil( m_mbParam, slave, addr,
 					ui->regTable->item( 0, DataColumn )->
-						text().toInt() ? 1 : 0 );
+						text().toInt(0, 0) ? 1 : 0 );
 			writeAccess = true;
 			num = 1;
 			break;
 		case FC_PRESET_SINGLE_REGISTER:
 			ret = preset_single_register( m_mbParam, slave, addr,
 					ui->regTable->item( 0, DataColumn )->
-						text().toInt() );
+						text().toInt(0, 0) );
 			writeAccess = true;
 			num = 1;
 			break;
@@ -416,7 +431,7 @@ void MainWindow::sendModbusRequest( void )
 			for( int i = 0; i < num; ++i )
 			{
 				data[i] = ui->regTable->item( i, DataColumn )->
-								text().toInt();
+								text().toInt(0, 0);
 			}
 			ret = force_multiple_coils( m_mbParam, slave, addr,
 								num, data );
@@ -430,7 +445,7 @@ void MainWindow::sendModbusRequest( void )
 			for( int i = 0; i < num; ++i )
 			{
 				data[i] = ui->regTable->item( i, DataColumn )->
-								text().toInt();
+								text().toInt(0, 0);
 			}
 			ret = preset_multiple_registers( m_mbParam, slave, addr,
 								num, data );
@@ -456,18 +471,22 @@ void MainWindow::sendModbusRequest( void )
 		}
 		else
 		{
+			bool b_hex = is16Bit && ui->checkBoxHexData->checkState() == Qt::Checked;
+			QString qs_num;
+
 			ui->regTable->setRowCount( num );
 			for( int i = 0; i < num; ++i )
 			{
 				int data = is16Bit ? dest16[i] : dest[i];
+
 				QTableWidgetItem * dtItem =
 					new QTableWidgetItem( dataType );
 				QTableWidgetItem * addrItem =
 					new QTableWidgetItem(
 						QString::number( addr+i ) );
+				qs_num.sprintf( b_hex ? "0x%04x" : "%d", data);
 				QTableWidgetItem * dataItem =
-					new QTableWidgetItem(
-						QString::number( data ) );
+					new QTableWidgetItem( qs_num );
 				dtItem->setFlags( dtItem->flags() &
 							~Qt::ItemIsEditable );
 				addrItem->setFlags( addrItem->flags() &
