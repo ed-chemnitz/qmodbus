@@ -12,6 +12,7 @@
 #include <QList>
 
 #ifdef _TTY_WIN_
+	#pragma comment(lib, "setupapi.lib")
 	#include <windows.h>
 	#include <setupapi.h>
 #endif /*_TTY_WIN_*/
