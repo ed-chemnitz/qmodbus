@@ -23,7 +23,12 @@
 #define NATIVE_WIN32
 #endif /* win32 and no cygwin */
 
+#ifdef _MSC_VER
+#include "stdint-msvc.h"
+#else
 #include <stdint.h>
+#endif
+
 #ifdef NATIVE_WIN32
 #include <windows.h>
 #else /* NATIVE_WIN32 */

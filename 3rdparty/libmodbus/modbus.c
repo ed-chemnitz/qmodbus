@@ -37,7 +37,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include <errno.h>
