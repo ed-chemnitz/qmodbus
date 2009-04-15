@@ -827,7 +827,7 @@ static int modbus_receive(modbus_param_t *mb_param,
 			if (0x80 + query[offset + 1] == response[offset + 1]) {
 
 				int exception_code = response[offset + 2];
-				// FIXME check test
+				/* FIXME check test */
 				if (exception_code < NB_TAB_ERROR_MSG) {
 					error_treat(mb_param, -exception_code,
 						    TAB_ERROR_MSG[response[offset + 2]]);
@@ -2220,11 +2220,11 @@ void modbus_poll(modbus_param_t*mb_param)
 {
 	uint8_t msg[MAX_MESSAGE_LENGTH];
 	int msg_len = 0;
-	const int ret = modbus_listen( mb_param, msg, &msg_len, 1000 );	// wait for 1 ms
+	const int ret = modbus_listen( mb_param, msg, &msg_len, 1000 );	/* wait for 1 ms */
 	if( ( ret == COMM_TIME_OUT && msg_len > 0 ) || ret >= 0 )
 	{
 		busMonitorRawData( msg, msg_len );
-
+		{
 		const int o = mb_param->header_length;
 		const int slave = msg[o+0];
 		const int func = msg[o+1];
@@ -2252,7 +2252,7 @@ void modbus_poll(modbus_param_t*mb_param)
 				break;
 			case FC_FORCE_SINGLE_COIL:
 			case FC_PRESET_SINGLE_REGISTER:
-				// can't decide from message whether it is a query or response
+				/* can't decide from message whether it is a query or response */
 				isQuery = 0;
 				nb = 1;
 				addr = ( msg[o+2] << 8 ) | msg[o+3];
@@ -2262,11 +2262,11 @@ void modbus_poll(modbus_param_t*mb_param)
 			case FC_PRESET_MULTIPLE_REGISTERS:
 			case FC_FORCE_MULTIPLE_COILS:
 			default:
-				// can't decide from message whether it is a query or response
+				/* can't decide from message whether it is a query or response */
 				isQuery = 0;
 				break;
 		}
-		if( nb == -1 )	// is query or a write-response?
+		if( nb == -1 )	/* is query or a write-response? */
 		{
 			addr = ( msg[o+2] << 8 ) | msg[o+3];
 			nb = ( msg[o+4] << 8 ) | msg[o+5];
@@ -2278,5 +2278,6 @@ void modbus_poll(modbus_param_t*mb_param)
 					nb,				/* nb */
 					( msg[msg_len-2] << 8 ) | msg[msg_len-1]	/* CRC */
 				);
+		}
 	}
 }
