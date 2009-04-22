@@ -679,6 +679,7 @@ static int receive_msg(modbus_param_t *mb_param,
 				     return TOO_MANY_DATA;
 				}
 				state = COMPLETE;
+				busMonitorRawData( msg, msg_length_computed );
 				break;
 			case COMPLETE:
 				length_to_read = 0;
@@ -736,10 +737,6 @@ static int modbus_receive(modbus_param_t *mb_param,
 	response_length_computed = compute_response_length(mb_param, query);
 	ret = receive_msg(mb_param, response_length_computed,
 			  response, &response_length, TIME_OUT_DEFAULT);
-	if( response_length > 0 )
-	{
-		busMonitorRawData( response, response_length );
-	}
 	if (ret == 0) {
 		/* GOOD RESPONSE */
 		int query_nb_value;
@@ -2220,11 +2217,9 @@ void modbus_poll(modbus_param_t*mb_param)
 {
 	uint8_t msg[MAX_MESSAGE_LENGTH];
 	int msg_len = 0;
-	const int ret = modbus_listen( mb_param, msg, &msg_len, 1000 );	/* wait for 1 ms */
+	const int ret = modbus_listen( mb_param, msg, &msg_len, 500 );	/* wait for 0.5 ms */
 	if( ( ret == COMM_TIME_OUT && msg_len > 0 ) || ret >= 0 )
 	{
-		busMonitorRawData( msg, msg_len );
-		{
 		const int o = mb_param->header_length;
 		const int slave = msg[o+0];
 		const int func = msg[o+1];
@@ -2278,6 +2273,5 @@ void modbus_poll(modbus_param_t*mb_param)
 					nb,				/* nb */
 					( msg[msg_len-2] << 8 ) | msg[msg_len-1]	/* CRC */
 				);
-		}
 	}
 }
