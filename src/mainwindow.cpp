@@ -105,7 +105,7 @@ MainWindow::MainWindow( QWidget * _parent ) :
 	changeSerialPort( portIndex );
 	updateRegisterView();
 	updateRequestPreview();
-        enableHexView();
+	enableHexView();
 
 	ui->regTable->setColumnWidth( 0, 150 );
 
@@ -118,7 +118,7 @@ MainWindow::MainWindow( QWidget * _parent ) :
 
 	QTimer * t = new QTimer( this );
 	connect( t, SIGNAL(timeout()), this, SLOT(pollForDataOnBus()));
-	t->start( 100 );
+	t->start( 1 );
 }
 
 
