@@ -1,0 +1,4 @@
+MINGW=/opt/mingw32
+export PATH=$PATH:$MINGW/bin
+cmake .. -DCMAKE_TOOLCHAIN_FILE=cmake/Win32Toolchain.cmake
+
