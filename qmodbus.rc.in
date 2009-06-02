@@ -1,0 +1,26 @@
+lmmsicon ICON data/qmodbus.ico
+#include <windows.h>
+
+VS_VERSION_INFO	VERSIONINFO
+  FILEVERSION	0,1,0,0
+  FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+  FILEOS	VOS_NT_WINDOWS32
+  FILETYPE	VFT_APP
+  FILESUBTYPE	VFT2_UNKNOWN
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    //language ID = U.S. English, charset = Windows, Multilingual
+    BEGIN
+      VALUE "Comments",		"QModBus (http://qmodbus.sourceforge.net)\0"
+      VALUE "CompanyName",	"Electronic Design Chemnitz (EDC)\0"
+      VALUE "FileDescription",	"QModBus\0"
+      VALUE "FileVersion",	"@VERSION@\0"
+      VALUE "LegalCopyright",	"Copyright (c) 2009 Tobias Doerffel / Electronic Design Chemnitz\0"
+      VALUE "OriginalFilename",	"qmodbus.exe\0"
+      VALUE "ProductName",	"QModBus\0"
+      VALUE "ProductVersion",	"@VERSION@\0"
+    END
+  END
+END
