@@ -17,9 +17,9 @@
    version="1.0"
    sodipodi:docname="logo.svg"
    inkscape:output_extension="org.inkscape.output.svg.inkscape"
-   inkscape:export-filename="C:\Dokumente und Einstellungen\tobias.doerffel\Eigene Dateien\CCE_workspace\QModBus\logo.png"
-   inkscape:export-xdpi="90"
-   inkscape:export-ydpi="90">
+   inkscape:export-filename="/home/toby/projekte/web/qmodbus/logo.png"
+   inkscape:export-xdpi="56.25"
+   inkscape:export-ydpi="56.25">
   <defs
      id="defs4">
     <linearGradient
@@ -36,11 +36,11 @@
     <linearGradient
        id="linearGradient3163">
       <stop
-         style="stop-color:#1e3678;stop-opacity:1;"
+         style="stop-color:#163a80;stop-opacity:0.96078432;"
          offset="0"
          id="stop3165" />
       <stop
-         style="stop-color:#899be0;stop-opacity:1;"
+         style="stop-color:#5387c3;stop-opacity:0.96078432;"
          offset="1"
          id="stop3167" />
     </linearGradient>
@@ -62,43 +62,11 @@
        gradientUnits="userSpaceOnUse" />
     <filter
        inkscape:collect="always"
-       id="filter3729"
-       x="-0.058825238"
-       width="1.1176505"
-       y="-0.16476888"
-       height="1.3295378">
-      <feGaussianBlur
-         inkscape:collect="always"
-         stdDeviation="1.0945544"
-         id="feGaussianBlur3731" />
-    </filter>
-    <filter
-       inkscape:collect="always"
-       id="filter3737">
-      <feGaussianBlur
-         inkscape:collect="always"
-         stdDeviation="0.068409649"
-         id="feGaussianBlur3739" />
-    </filter>
-    <filter
-       inkscape:collect="always"
        id="filter3742">
       <feGaussianBlur
          inkscape:collect="always"
          stdDeviation="0.027363859"
          id="feGaussianBlur3744" />
-    </filter>
-    <filter
-       inkscape:collect="always"
-       id="filter3818"
-       x="-0.067581026"
-       width="1.1351621"
-       y="-0.18862874"
-       height="1.3772575">
-      <feGaussianBlur
-         inkscape:collect="always"
-         stdDeviation="1.2574723"
-         id="feGaussianBlur3820" />
     </filter>
     <linearGradient
        inkscape:collect="always"
@@ -119,11 +87,23 @@
     </filter>
     <filter
        inkscape:collect="always"
-       id="filter3844">
+       id="filter3254"
+       x="-0.060401036"
+       width="1.1208021"
+       y="-0.16858832"
+       height="1.3371766">
       <feGaussianBlur
          inkscape:collect="always"
-         stdDeviation="0.23871165"
-         id="feGaussianBlur3846" />
+         stdDeviation="1.1238751"
+         id="feGaussianBlur3256" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter3258">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="0.11935543"
+         id="feGaussianBlur3260" />
     </filter>
   </defs>
   <sodipodi:namedview
@@ -133,16 +113,16 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.98994949"
-     inkscape:cx="127.61972"
-     inkscape:cy="294.73124"
+     inkscape:zoom="1.979899"
+     inkscape:cx="24.041345"
+     inkscape:cy="129.46908"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="1280"
-     inkscape:window-height="964"
-     inkscape:window-x="-4"
-     inkscape:window-y="-4">
+     inkscape:window-width="1676"
+     inkscape:window-height="993"
+     inkscape:window-x="0"
+     inkscape:window-y="0">
     <inkscape:grid
        type="xygrid"
        id="grid3746"
@@ -176,7 +156,7 @@
        transform="matrix(0.99415,0,0,1.0777387,-3.5190198,-7.9991743)" />
     <path
        transform="matrix(4.789284,0,0,8.5166043,-146.38873,-292.25285)"
-       style="font-size:17.95025635px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;opacity:0.8;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;filter:url(#filter3818);font-family:DejaVu Sans;-inkscape-font-specification:DejaVu Sans Bold"
+       style="font-size:17.95025635000000008px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;opacity:0.7;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;filter:url(#filter3254);font-family:DejaVu Sans;-inkscape-font-specification:DejaVu Sans Bold"
        d="M 41.328459,55.772776 L 41.065516,55.772776 C 38.909376,55.772776 37.232384,55.176772 36.034535,53.984763 C 34.836682,52.792756 34.237756,51.133294 34.237757,49.006371 C 34.237756,46.885305 34.835221,45.222921 36.030153,44.019215 C 37.22508,42.815532 38.871395,42.213685 40.969103,42.213672 C 43.090169,42.213685 44.742327,42.809689 45.925583,44.001685 C 47.108813,45.193705 47.700435,46.861932 47.700449,49.006371 C 47.700435,50.478858 47.386364,51.746827 46.758236,52.810283 C 46.130081,53.873744 45.22585,54.674259 44.045539,55.211831 L 45.364637,56.64315 L 76.903197,56.783135 L 74.727173,58.213002 L 46.683735,58.156795 L 43.467064,58.156795 L 41.328459,55.772776 z M 40.969103,44.659043 C 39.940696,44.659054 39.143103,45.038861 38.57632,45.798464 C 38.009526,46.558087 37.726132,47.627388 37.726137,49.006371 C 37.726132,50.40874 38.003683,51.482424 38.55879,52.227425 C 39.113887,52.972434 39.917324,53.344936 40.969103,53.344934 C 42.003338,53.344936 42.803853,52.96513 43.370651,52.205514 C 43.937429,51.445904 44.220823,50.379524 44.220834,49.006371 C 44.220823,47.627388 43.937429,46.558087 43.370651,45.798464 C 42.803853,45.038861 42.003338,44.659054 40.969103,44.659043 L 40.969103,44.659043 z M 50.242233,42.45032 L 54.536972,42.45032 L 57.516995,49.453375 L 60.514548,42.45032 L 64.800522,42.45032 L 64.800522,55.536127 L 61.610145,55.536127 L 61.610145,45.964995 L 58.595062,53.020637 L 56.456458,53.020637 L 53.441376,45.964995 L 53.441376,55.536127 L 50.242233,55.536127 L 50.242233,42.45032 z M 73.363706,47.51636 C 73.895428,47.516368 74.298608,47.399504 74.573245,47.165769 C 74.847866,46.93205 74.985181,46.587303 74.985189,46.131525 C 74.985181,45.68161 74.847866,45.338324 74.573245,45.101664 C 74.298608,44.865026 73.895428,44.746702 73.363706,44.746691 L 71.496809,44.746691 L 71.496809,47.51636 L 73.363706,47.51636 z M 73.477648,53.239757 C 74.15545,53.239759 74.665267,53.096601 75.007101,52.810283 C 75.348919,52.52397 75.519831,52.091575 75.51984,51.513096 C 75.519831,50.946312 75.350379,50.521221 75.011484,50.237822 C 74.672571,49.954433 74.161293,49.812736 73.477648,49.81273 L 71.496809,49.81273 L 71.496809,53.239757 L 73.477648,53.239757 z M 76.615437,48.533073 C 77.339981,48.743435 77.900926,49.132006 78.298274,49.698788 C 78.695598,50.265582 78.894266,50.96092 78.894278,51.784804 C 78.894266,53.046934 78.467714,53.987686 77.614621,54.607061 C 76.761506,55.226439 75.464321,55.536127 73.723062,55.536127 L 68.122372,55.536127 L 68.122372,42.45032 L 73.188411,42.45032 C 75.005632,42.450334 76.321807,42.724963 77.136941,43.274209 C 77.952054,43.82348 78.359615,44.702878 78.359627,45.912406 C 78.359615,46.549322 78.210614,47.091277 77.912624,47.538272 C 77.61461,47.985283 77.182215,48.316883 76.615437,48.533073 L 76.615437,48.533073 z"
        id="path3748"
        sodipodi:nodetypes="ccsssssssccccccccssssssscccccccccccccccccssscccccssscccccsssccccssscc" />
@@ -188,7 +168,7 @@
        sodipodi:nodetypes="ccsssssssccccccccssssssscccccccccccccccccssscccccssscccccsssccccssscc" />
     <path
        sodipodi:type="arc"
-       style="opacity:0.6;fill:url(#linearGradient3824);fill-opacity:1;stroke:none;stroke-width:7.66927719;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;filter:url(#filter3844)"
+       style="opacity:0.59999999999999998;fill:url(#linearGradient3824);fill-opacity:1;stroke:none;stroke-width:7.66927718999999986;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;filter:url(#filter3258)"
        id="path3822"
        sodipodi:cx="132.32999"
        sodipodi:cy="126.1954"
