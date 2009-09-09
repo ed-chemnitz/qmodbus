@@ -31,16 +31,6 @@
 #include "ui_about.h"
 
 
-namespace Ui
-{
-    class MainWindowClass;
-}
-
-
-class QLabel;
-
-
-
 class AboutDialog : public QDialog, public Ui::AboutDialog
 {
 public:
@@ -53,6 +43,12 @@ public:
 	}
 } ;
 
+
+
+namespace Ui
+{
+    class MainWindowClass;
+}
 
 class MainWindow : public QMainWindow
 {
