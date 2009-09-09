@@ -425,16 +425,6 @@
            <string>Write Multiple Registers (0x10)</string>
           </property>
          </item>
-         <item>
-          <property name="text">
-           <string>Read Exception Status (0x07)</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Report Slave ID (0x11)</string>
-          </property>
-         </item>
         </widget>
        </item>
        <item row="1" column="2">

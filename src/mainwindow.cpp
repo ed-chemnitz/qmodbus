@@ -454,8 +454,6 @@ void MainWindow::sendModbusRequest( void )
 			break;
 		}
 
-		case FC_REPORT_SLAVE_ID:
-		case FC_READ_EXCEPTION_STATUS:
 		default:
 			break;
 	}
