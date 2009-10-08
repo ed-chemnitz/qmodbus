@@ -28,8 +28,8 @@ INCLUDE(${QT_USE_FILE})
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/qmodbus.rc.in ${CMAKE_BINARY_DIR}/qmodbus.rc)
 
 # set compiler flags
-SET(CMAKE_C_FLAGS "-O2 -g -Wall -ftree-vectorize ${CMAKE_C_FLAGS}")
-SET(CMAKE_CXX_FLAGS "-O2 -g -fno-exceptions -Wall -ftree-vectorize ${CMAKE_CXX_FLAGS}")
+SET(CMAKE_C_FLAGS "-O2 -g -Wall ${CMAKE_C_FLAGS}")
+SET(CMAKE_CXX_FLAGS "-O2 -g -fno-exceptions -Wall ${CMAKE_CXX_FLAGS}")
 
 SET(qmodbus_SOURCES src/main.cpp 
     src/mainwindow.cpp 
@@ -49,16 +49,14 @@ IF(WIN32)
 	SET(qmodbus_INCLUDES ${qmodbus_INCLUDES} 3rdparty/qextserialport/win_qextserialport.h)
 	ADD_DEFINITIONS(-D_TTY_WIN_)
 	LINK_LIBRARIES(-lsetupapi)
-	INSTALL(FILES /opt/mingw32/bin/QtCore4.dll /opt/mingw32/bin/QtGui4.dll /opt/mingw32/bin/libz.dll /opt/mingw32/i586-pc-mingw32/bin/mingwm10.dll DESTINATION .)
+	INSTALL(FILES ${QT_BINARY_DIR}/QtCore4.dll ${QT_BINARY_DIR}/QtGui4.dll ${QT_BINARY_DIR}/mingwm10.dll DESTINATION .)
 	SET(WINRC "${CMAKE_BINARY_DIR}/qmodbusrc.obj")
-	SET(WINDRES /opt/mingw32/bin/i586-pc-mingw32-windres)
 	ADD_CUSTOM_COMMAND(OUTPUT ${WINRC}
 			COMMAND ${WINDRES}
 				-I${CMAKE_SOURCE_DIR}
 				-o${CMAKE_BINARY_DIR}/qmodbusrc.obj
 				-i${CMAKE_BINARY_DIR}/qmodbus.rc
 			DEPENDS ${CMAKE_BINARY_DIR}/qmodbus.rc)
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-attributes")
 ELSE(WIN32)
 	SET(qmodbus_SOURCES ${qmodbus_SOURCES} 3rdparty/qextserialport/posix_qextserialport.cpp)
 	SET(qmodbus_INCLUDES ${qmodbus_INCLUDES} 3rdparty/qextserialport/posix_qextserialport.h)
@@ -76,7 +74,6 @@ LINK_LIBRARIES(${QT_LIBRARIES})
 ADD_EXECUTABLE(qmodbus ${qmodbus_SOURCES} ${qmodbus_UIC_out} ${qmodbus_MOC_out} ${qmodbus_RCC_out} ${WINRC})
 
 IF(WIN32)
-        SET(STRIP /opt/mingw32/bin/i586-pc-mingw32-strip)
 	SET_TARGET_PROPERTIES(qmodbus PROPERTIES LINK_FLAGS "${LINK_FLAGS} -mwindows")
         ADD_CUSTOM_COMMAND(TARGET qmodbus POST_BUILD COMMAND ${STRIP} ${CMAKE_BINARY_DIR}/qmodbus.exe)
         INSTALL(TARGETS qmodbus RUNTIME DESTINATION .)
