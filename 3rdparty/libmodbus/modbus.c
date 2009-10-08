@@ -656,6 +656,7 @@ static int receive_msg(modbus_param_t *mb_param,
 			for (i=0; i < read_ret; i++)
 				printf("<%.2X>", p_msg[i]);
 		}
+		busMonitorRawData( p_msg, read_ret );
 
 		if ((*p_msg_length) < msg_length_computed) {
 			/* Message incomplete */
@@ -679,7 +680,6 @@ static int receive_msg(modbus_param_t *mb_param,
 				     return TOO_MANY_DATA;
 				}
 				state = COMPLETE;
-				busMonitorRawData( msg, msg_length_computed );
 				break;
 			case COMPLETE:
 				length_to_read = 0;
