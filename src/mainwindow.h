@@ -80,7 +80,7 @@ private slots:
 
 private:
 	Ui::MainWindowClass * ui;
-	modbus_param_t * m_mbParam;
+	modbus_t * m_modbus;
 	QWidget * m_statusInd;
 	QLabel * m_statusText;
 

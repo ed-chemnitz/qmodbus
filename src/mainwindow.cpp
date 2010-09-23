@@ -30,6 +30,7 @@
 
 #include "mainwindow.h"
 #include "modbus.h"
+#include "modbus-private.h"
 #include "qextserialenumerator.h"
 #include "ui_mainwindow.h"
 
@@ -44,7 +45,7 @@ extern MainWindow * globalMainWin;
 MainWindow::MainWindow( QWidget * _parent ) :
 	QMainWindow( _parent ),
 	ui( new Ui::MainWindowClass ),
-	m_mbParam( NULL )
+	m_modbus( NULL )
 {
 	ui->setupUi(this);
 
@@ -189,15 +190,15 @@ static QString descriptiveDataTypeName( int funcCode )
 {
 	switch( funcCode )
 	{
-		case FC_READ_COIL_STATUS:
-		case FC_FORCE_SINGLE_COIL:
-		case FC_FORCE_MULTIPLE_COILS:
+		case FC_READ_COILS:
+		case FC_WRITE_SINGLE_COIL:
+		case FC_WRITE_MULTIPLE_COILS:
 			return "Coil (binary)";
-		case FC_READ_INPUT_STATUS:
+		case FC_READ_DISCRETE_INPUTS:
 			return "Discrete Input (binary)";
 		case FC_READ_HOLDING_REGISTERS:
-		case FC_PRESET_SINGLE_REGISTER:
-		case FC_PRESET_MULTIPLE_REGISTERS:
+		case FC_WRITE_SINGLE_REGISTER:
+		case FC_WRITE_MULTIPLE_REGISTERS:
 			return "Holding Register (16 bit)";
 		case FC_READ_INPUT_REGISTERS:
 			return "Input Register (16 bit)";
@@ -242,20 +243,28 @@ void MainWindow::changeSerialPort( int )
 		const QString port = ports[iface].physName;
 #endif
 
-		if( m_mbParam )
+		char parity;
+		switch( ui->parity->currentIndex() )
 		{
-			modbus_close( m_mbParam );
-			delete m_mbParam;
+			case 1: parity = 'O'; break;
+			case 2: parity = 'E'; break;
+			default:
+			case 0: parity = 'N'; break;
 		}
 
-		m_mbParam = new modbus_param_t;
-		modbus_init_rtu( m_mbParam, port.toAscii().constData(),
-				ui->baud->currentText().toInt(),
-				ui->parity->currentText().toAscii().constData(),
-				ui->dataBits->currentText().toInt(),
-				ui->stopBits->currentText().toInt() );
+		if( m_modbus )
+		{
+			modbus_close( m_modbus );
+			modbus_free( m_modbus );
+		}
 
-		if( modbus_connect( m_mbParam ) == -1 )
+		m_modbus = modbus_new_rtu( port.toAscii().constData(),
+				ui->baud->currentText().toInt(),
+				parity,
+				ui->dataBits->currentText().toInt(),
+				ui->stopBits->currentText().toInt(), 1 );
+
+		if( modbus_connect( m_modbus ) == -1 )
 		{
 			QMessageBox::critical( this, tr( "Connection failed" ),
 				tr( "Could not connect serial port!" ) );
@@ -288,7 +297,7 @@ void MainWindow::updateRequestPreview( void )
 							currentText() ) );
 	const int addr = ui->startAddr->value();
 	const int num = ui->numCoils->value();
-	if( func == FC_FORCE_SINGLE_COIL || func == FC_PRESET_SINGLE_REGISTER )
+	if( func == FC_WRITE_SINGLE_COIL || func == FC_WRITE_SINGLE_REGISTER )
 	{
 		ui->requestPreview->setText(
 			QString().sprintf( "%.2x  %.2x  %.2x %.2x ",
@@ -323,13 +332,13 @@ void MainWindow::updateRegisterView( void )
 	int rowCount = 0;
 	switch( func )
 	{
-		case FC_PRESET_SINGLE_REGISTER:
-		case FC_FORCE_SINGLE_COIL:
+		case FC_WRITE_SINGLE_REGISTER:
+		case FC_WRITE_SINGLE_COIL:
 			ui->numCoils->setEnabled( false );
 			rowCount = 1;
 			break;
-		case FC_FORCE_MULTIPLE_COILS:
-		case FC_PRESET_MULTIPLE_REGISTERS:
+		case FC_WRITE_MULTIPLE_COILS:
+		case FC_WRITE_MULTIPLE_REGISTERS:
 			rowCount = ui->numCoils->value();
 		default:
 			ui->numCoils->setEnabled( true );
@@ -370,7 +379,7 @@ void MainWindow::enableHexView( void )
 
 void MainWindow::sendModbusRequest( void )
 {
-	if( m_mbParam == NULL )
+	if( m_modbus == NULL )
 	{
 		return;
 	}
@@ -390,42 +399,40 @@ void MainWindow::sendModbusRequest( void )
 	bool writeAccess = false;
 	const QString dataType = descriptiveDataTypeName( func );
 
+	modbus_set_slave( m_modbus, slave );
+
 	switch( func )
 	{
-		case FC_READ_COIL_STATUS:
-			ret = read_coil_status( m_mbParam, slave, addr, num,
-									dest );
+		case FC_READ_COILS:
+			ret = modbus_read_bits( m_modbus, addr, num, dest );
 			break;
-		case FC_READ_INPUT_STATUS:
-			ret = read_input_status( m_mbParam, slave, addr, num,
-									dest );
+		case FC_READ_DISCRETE_INPUTS:
+			ret = modbus_read_input_bits( m_modbus, addr, num, dest );
 			break;
 		case FC_READ_HOLDING_REGISTERS:
-			ret = read_holding_registers( m_mbParam, slave, addr,
-								num, dest16 );
+			ret = modbus_read_registers( m_modbus, addr, num, dest16 );
 			is16Bit = true;
 			break;
 		case FC_READ_INPUT_REGISTERS:
-			ret = read_input_registers( m_mbParam, slave, addr,
-								num, dest16 );
+			ret = modbus_read_input_registers( m_modbus, addr, num, dest16 );
 			is16Bit = true;
 			break;
-		case FC_FORCE_SINGLE_COIL:
-			ret = force_single_coil( m_mbParam, slave, addr,
+		case FC_WRITE_SINGLE_COIL:
+			ret = modbus_write_bit( m_modbus, addr,
 					ui->regTable->item( 0, DataColumn )->
 						text().toInt(0, 0) ? 1 : 0 );
 			writeAccess = true;
 			num = 1;
 			break;
-		case FC_PRESET_SINGLE_REGISTER:
-			ret = preset_single_register( m_mbParam, slave, addr,
+		case FC_WRITE_SINGLE_REGISTER:
+			ret = modbus_write_register( m_modbus, addr,
 					ui->regTable->item( 0, DataColumn )->
 						text().toInt(0, 0) );
 			writeAccess = true;
 			num = 1;
 			break;
 
-		case FC_FORCE_MULTIPLE_COILS:
+		case FC_WRITE_MULTIPLE_COILS:
 		{
 			uint8_t * data = new uint8_t[num];
 			for( int i = 0; i < num; ++i )
@@ -433,13 +440,12 @@ void MainWindow::sendModbusRequest( void )
 				data[i] = ui->regTable->item( i, DataColumn )->
 								text().toInt(0, 0);
 			}
-			ret = force_multiple_coils( m_mbParam, slave, addr,
-								num, data );
+			ret = modbus_write_bits( m_modbus, addr, num, data );
 			delete[] data;
 			writeAccess = true;
 			break;
 		}
-		case FC_PRESET_MULTIPLE_REGISTERS:
+		case FC_WRITE_MULTIPLE_REGISTERS:
 		{
 			uint16_t * data = new uint16_t[num];
 			for( int i = 0; i < num; ++i )
@@ -447,8 +453,7 @@ void MainWindow::sendModbusRequest( void )
 				data[i] = ui->regTable->item( i, DataColumn )->
 								text().toInt(0, 0);
 			}
-			ret = preset_multiple_registers( m_mbParam, slave, addr,
-								num, data );
+			ret = modbus_write_registers( m_modbus, addr, num, data );
 			delete[] data;
 			writeAccess = true;
 			break;
@@ -534,9 +539,9 @@ void MainWindow::resetStatus( void )
 
 void MainWindow::pollForDataOnBus( void )
 {
-	if( m_mbParam )
+	if( m_modbus )
 	{
-		modbus_poll( m_mbParam );
+		modbus_poll( m_modbus );
 	}
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2001-2008 Stéphane Raimbault <stephane.raimbault@gmail.com>
+ * Copyright © 2001-2010 Stéphane Raimbault <stephane.raimbault@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser Public License as published by
@@ -18,67 +18,53 @@
 #ifndef _MODBUS_H_
 #define _MODBUS_H_
 
+#include <config.h>
+
 /* If win32 and no cygwin, suppose it's MinGW or any other native windows compiler. */
 #if defined(WIN32) && !defined(__CYGWIN__)
 #define NATIVE_WIN32
+#define MSG_NOSIGNAL 0
+#define ECONNRESET WSAECONNRESET
+#define ECONNREFUSED WSAECONNREFUSED
+#define ETIMEDOUT WSAETIMEDOUT
+#define ENOPROTOOPT WSAENOPROTOOPT
+#define SHUT_RDWR 2
 #endif /* win32 and no cygwin */
 
-#ifdef _MSC_VER
-#include "stdint-msvc.h"
-#else
+/* Add this for macros that defined unix flavor */
+#if (defined(__unix__) || defined(unix)) && !defined(USG)
+#include <sys/param.h>
+#endif
+
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
-
-#ifdef NATIVE_WIN32
-#include <windows.h>
-#else /* NATIVE_WIN32 */
+#ifndef NATIVE_WIN32
 #include <termios.h>
+#if defined(OpenBSD) || (defined(__FreeBSD__ ) && __FreeBSD__ < 5)
+#include <netinet/in_systm.h>
+#endif
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
-#endif /* NATIVE_WIN32 */
+#endif
+#include <sys/time.h>
 
-#ifdef __cplusplus
-extern "C" {
+#include "modbus-version.h"
+
+#ifdef  __cplusplus
+# define MODBUS_BEGIN_DECLS  extern "C" {
+# define MODBUS_END_DECLS    }
+#else
+# define MODBUS_BEGIN_DECLS
+# define MODBUS_END_DECLS
 #endif
 
-#define MODBUS_TCP_DEFAULT_PORT 502
-
-#define HEADER_LENGTH_RTU           0
-#define PRESET_QUERY_LENGTH_RTU     6
-#define PRESET_RESPONSE_LENGTH_RTU  2
-
-#define HEADER_LENGTH_TCP           6
-#define PRESET_QUERY_LENGTH_TCP    12
-#define PRESET_RESPONSE_LENGTH_TCP  8
-
-#define CHECKSUM_LENGTH_RTU      2
-#define CHECKSUM_LENGTH_TCP      0
-
-/* It's not really the minimal length (the real one is report slave ID
- * in RTU (4 bytes)) but it's a convenient size to use in RTU or TCP
- * communications to read many values or write a single one.
- * Maximum between :
- * - HEADER_LENGTH_TCP (6) + slave (1) + function (1) + address (2) +
- *   number (2)
- * - HEADER_LENGTH_RTU (0) + slave (1) + function (1) + address (2) +
- *   number (2) + CRC (2)
-*/
-#define MIN_QUERY_LENGTH        12
-
-/* Page 102, Application Notes of PI–MBUS–300:
- *  The maximum length of the entire message must not exceed 256
- *  bytes.
- */
-#define MAX_MESSAGE_LENGTH     256
-
-#define MAX_STATUS             800
-#define MAX_REGISTERS          100
-
-#define REPORT_SLAVE_ID_LENGTH 75
-
-/* Time out between trames in microsecond */
-#define TIME_OUT_BEGIN_OF_TRAME 500000
-#define TIME_OUT_END_OF_TRAME   500000
-#define TIME_OUT_DEFAULT	10000000
+MODBUS_BEGIN_DECLS
 
 #ifndef FALSE
 #define FALSE 0
@@ -96,266 +82,156 @@ extern "C" {
 #define ON 1
 #endif
 
-/* Function codes */
-#define FC_READ_COIL_STATUS          0x01  /* discretes inputs */
-#define FC_READ_INPUT_STATUS         0x02  /* discretes outputs */
-#define FC_READ_HOLDING_REGISTERS    0x03
-#define FC_READ_INPUT_REGISTERS      0x04
-#define FC_FORCE_SINGLE_COIL         0x05
-#define FC_PRESET_SINGLE_REGISTER    0x06
-#define FC_READ_EXCEPTION_STATUS     0x07
-#define FC_FORCE_MULTIPLE_COILS      0x0F
-#define FC_PRESET_MULTIPLE_REGISTERS 0x10
-#define FC_REPORT_SLAVE_ID           0x11
+#define MODBUS_TCP_DEFAULT_PORT   502
+#define MODBUS_BROADCAST_ADDRESS    0
+#define MODBUS_TCP_SLAVE         0xFF
+
+/* Modbus_Application_Protocol_V1_1b.pdf Chapter 4 Section 1 Page 5:
+ *  - RS232 / RS485 ADU = 253 bytes + slave (1 byte) + CRC (2 bytes) = 256 bytes
+ *  - TCP MODBUS ADU = 253 bytes + MBAP (7 bytes) = 260 bytes
+ */
+#define MODBUS_MAX_ADU_LENGTH_RTU  256
+#define MODBUS_MAX_ADU_LENGTH_TCP  260
+
+/* Modbus_Application_Protocol_V1_1b.pdf (chapter 6 section 1 page 12)
+ * Quantity of Coils to read (2 bytes): 1 to 2000 (0x7D0)
+ * (chapter 6 section 11 page 29)
+ * Quantity of Coils to write (2 bytes): 1 to 1968 (0x7B0)
+ */
+#define MODBUS_MAX_READ_BITS              2000
+#define MODBUS_MAX_WRITE_BITS             1968
+
+/* Modbus_Application_Protocol_V1_1b.pdf (chapter 6 section 3 page 15)
+ * Quantity of Registers to read (2 bytes): 1 to 125 (0x7D)
+ * (chapter 6 section 12 page 31)
+ * Quantity of Registers to write (2 bytes) 1 to 123 (0x7B)
+ * (chapter 6 section 17 page 38)
+ * Quantity of Registers to write in R/W registers (2 bytes) 1 to 121 (0x79)
+ */
+#define MODBUS_MAX_READ_REGISTERS          125
+#define MODBUS_MAX_WRITE_REGISTERS         123
+#define MODBUS_MAX_RW_WRITE_REGISTERS      121
+
+/* Random number to avoid errno conflicts */
+#define MODBUS_ENOBASE 112345678
 
 /* Protocol exceptions */
-#define ILLEGAL_FUNCTION        -0x01
-#define ILLEGAL_DATA_ADDRESS    -0x02
-#define ILLEGAL_DATA_VALUE      -0x03
-#define SLAVE_DEVICE_FAILURE    -0x04
-#define SERVER_FAILURE          -0x04
-#define ACKNOWLEDGE             -0x05
-#define SLAVE_DEVICE_BUSY       -0x06
-#define SERVER_BUSY             -0x06
-#define NEGATIVE_ACKNOWLEDGE    -0x07
-#define MEMORY_PARITY_ERROR     -0x08
-#define GATEWAY_PROBLEM_PATH    -0x0A
-#define GATEWAY_PROBLEM_TARGET  -0x0B
-
-/* Local */
-#define COMM_TIME_OUT           -0x0C
-#define PORT_SOCKET_FAILURE     -0x0D
-#define SELECT_FAILURE          -0x0E
-#define TOO_MANY_DATA           -0x0F
-#define INVALID_CRC             -0x10
-#define INVALID_EXCEPTION_CODE  -0x11
-#define CONNECTION_CLOSED       -0x12
-
-/* Internal using */
-#define MSG_LENGTH_UNDEFINED -1
-
-typedef enum { RTU, TCP } type_com_t;
-typedef enum { FLUSH_OR_RECONNECT_ON_ERROR, NOP_ON_ERROR } error_handling_t;
-
-#ifdef NATIVE_WIN32
-/* WIN32: struct containing serial handle and a receive buffer */
-#define PY_BUF_SIZE 512
-struct win32_ser {
-	/* File handle */
-	HANDLE fd;
-	/* Receive buffer */
-	uint8_t buf[PY_BUF_SIZE];
-	/* Received chars */
-	DWORD n_bytes;
+enum {
+    MODBUS_EXCEPTION_ILLEGAL_FUNCTION = 0x01,
+    MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS,
+    MODBUS_EXCEPTION_ILLEGAL_DATA_VALUE,
+    MODBUS_EXCEPTION_SLAVE_OR_SERVER_FAILURE,
+    MODBUS_EXCEPTION_ACKNOWLEDGE,
+    MODBUS_EXCEPTION_SLAVE_OR_SERVER_BUSY,
+    MODBUS_EXCEPTION_NEGATIVE_ACKNOWLEDGE,
+    MODBUS_EXCEPTION_MEMORY_PARITY,
+    MODBUS_EXCEPTION_NOT_DEFINED,
+    MODBUS_EXCEPTION_GATEWAY_PATH,
+    MODBUS_EXCEPTION_GATEWAY_TARGET,
+    MODBUS_EXCEPTION_MAX
 };
-#endif /* NATIVE_WIN32 */
 
-/* This structure is byte-aligned */
-typedef struct {
-#ifdef NATIVE_WIN32
-		/* Serial handle struct */
-		struct win32_ser w_ser;
-#else /* NATIVE_WIN32 */
-	/* Descriptor (tty or socket) */
-	int fd;
-#endif /* NATIVE_WIN32 */
-	/* Communication mode: RTU or TCP */
-	type_com_t type_com;
-	/* Flag debug */
-	int debug;
-	/* Header length used for offset */
-	int header_length;
-	/* Checksum length RTU = 2 and TCP = 0 */
-	int checksum_length;
-	/* TCP port */
-	int port;
-	/* Device: "/dev/ttyS0", "/dev/ttyUSB0" or "/dev/tty.USA19*"
-	   on Mac OS X for KeySpan USB<->Serial adapters this string
-	   had to be made bigger on OS X as the directory+file name
-	   was bigger than 19 bytes. Making it 67 bytes for now, but
-	   OS X does support 256 byte file names. May become a problem
-	   in the future. */
-#ifdef __APPLE_CC__
-	char device[64];
-#else
-	char device[16];
-#endif
-	/* Bauds: 9600, 19200, 57600, 115200, etc */
-	int baud;
-	/* Data bit */
-	uint8_t data_bit;
-	/* Stop bit */
-	uint8_t stop_bit;
-	/* Parity: "even", "odd", "none" */
-	char parity[5];
-	/* In error_treat with TCP, do a reconnect or just dump the error */
-	uint8_t error_handling;
-	/* IP address */
-	char ip[16];
-#ifdef NATIVE_WIN32
-	DCB old_dcb;
-#else /* NATIVE_WIN32 */
-	/* Save old termios settings */
-	struct termios old_tios;
-#endif /* NATIVE_WIN32 */
-} modbus_param_t;
+#define EMBXILFUN  (MODBUS_ENOBASE + MODBUS_EXCEPTION_ILLEGAL_FUNCTION)
+#define EMBXILADD  (MODBUS_ENOBASE + MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS)
+#define EMBXILVAL  (MODBUS_ENOBASE + MODBUS_EXCEPTION_ILLEGAL_DATA_VALUE)
+#define EMBXSFAIL  (MODBUS_ENOBASE + MODBUS_EXCEPTION_SLAVE_OR_SERVER_FAILURE)
+#define EMBXACK    (MODBUS_ENOBASE + MODBUS_EXCEPTION_ACKNOWLEDGE)
+#define EMBXSBUSY  (MODBUS_ENOBASE + MODBUS_EXCEPTION_SLAVE_OR_SERVER_BUSY)
+#define EMBXNACK   (MODBUS_ENOBASE + MODBUS_EXCEPTION_NEGATIVE_ACKNOWLEDGE)
+#define EMBXMEMPAR (MODBUS_ENOBASE + MODBUS_EXCEPTION_MEMORY_PARITY)
+#define EMBXGPATH  (MODBUS_ENOBASE + MODBUS_EXCEPTION_GATEWAY_PATH)
+#define EMBXGTAR   (MODBUS_ENOBASE + MODBUS_EXCEPTION_GATEWAY_TARGET)
+
+/* Native libmodbus error codes */
+#define EMBBADCRC  (EMBXGTAR + 1)
+#define EMBBADDATA (EMBXGTAR + 2)
+#define EMBBADEXC  (EMBXGTAR + 3)
+#define EMBUNKEXC  (EMBXGTAR + 4)
+#define EMBMDATA   (EMBXGTAR + 5)
+
+extern const unsigned int libmodbus_version_major;
+extern const unsigned int libmodbus_version_minor;
+extern const unsigned int libmodbus_version_micro;
+
+typedef struct _modbus modbus_t;
 
 typedef struct {
-	int nb_coil_status;
-	int nb_input_status;
-	int nb_input_registers;
-	int nb_holding_registers;
-	uint8_t *tab_coil_status;
-	uint8_t *tab_input_status;
-	uint16_t *tab_input_registers;
-	uint16_t *tab_holding_registers;
+    int nb_bits;
+    int nb_input_bits;
+    int nb_input_registers;
+    int nb_registers;
+    uint8_t *tab_bits;
+    uint8_t *tab_input_bits;
+    uint16_t *tab_input_registers;
+    uint16_t *tab_registers;
 } modbus_mapping_t;
 
+modbus_t* modbus_new_rtu(const char *device, int baud, char parity, int data_bit,
+                          int stop_bit, int slave);
+int modbus_set_slave(modbus_t* ctx, int slave);
 
-/* All functions used for sending or receiving data return:
-   - the numbers of values (bits or word) if success (0 or more)
-   - less than 0 for exceptions errors
-*/
+modbus_t* modbus_new_tcp(const char *ip_address, int port);
 
-/* Reads the boolean status of coils and sets the array elements in
-   the destination to TRUE or FALSE */
-int read_coil_status(modbus_param_t *mb_param, int slave,
-		     int start_addr, int nb, uint8_t *dest);
+int modbus_set_error_recovery(modbus_t *ctx, int enabled);
 
-/* Same as read_coil_status but reads the slaves input table */
-int read_input_status(modbus_param_t *mb_param, int slave,
-		      int start_addr, int nb, uint8_t *dest);
+void modbus_get_timeout_begin(modbus_t *ctx, struct timeval *timeout);
+void modbus_set_timeout_begin(modbus_t *ctx, const struct timeval *timeout);
 
-/* Reads the holding registers in a slave and put the data into an
-   array */
-int read_holding_registers(modbus_param_t *mb_param, int slave,
-			   int start_addr, int nb, uint16_t *dest);
+void modbus_get_timeout_end(modbus_t *ctx, struct timeval *timeout);
+void modbus_set_timeout_end(modbus_t *ctx, const struct timeval *timeout);
 
-/* Reads the input registers in a slave and put the data into an
-   array */
-int read_input_registers(modbus_param_t *mb_param, int slave,
-			 int start_addr, int nb, uint16_t *dest);
+int modbus_connect(modbus_t *ctx);
+void modbus_close(modbus_t *ctx);
 
-/* Turns ON or OFF a single coil in the slave device */
-int force_single_coil(modbus_param_t *mb_param, int slave,
-		      int coil_addr, int state);
+void modbus_free(modbus_t *ctx);
 
-/* Sets a value in one holding register in the slave device */
-int preset_single_register(modbus_param_t *mb_param, int slave,
-			   int reg_addr, int value);
+int modbus_flush(modbus_t *ctx);
+void modbus_set_debug(modbus_t *ctx, int boolean);
 
-/* Sets/resets the coils in the slave from an array in argument */
-int force_multiple_coils(modbus_param_t *mb_param, int slave,
-			 int start_addr, int nb, const uint8_t *data);
+const char *modbus_strerror(int errnum);
 
-/* Copies the values in the slave from the array given in argument */
-int preset_multiple_registers(modbus_param_t *mb_param, int slave,
-			      int start_addr, int nb, const uint16_t *data);
+int modbus_read_bits(modbus_t *ctx, int addr, int nb, uint8_t *dest);
+int modbus_read_input_bits(modbus_t *ctx, int addr, int nb, uint8_t *dest);
+int modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *dest);
+int modbus_read_input_registers(modbus_t *ctx, int addr, int nb, uint16_t *dest);
+int modbus_write_bit(modbus_t *ctx, int coil_addr, int state);
+int modbus_write_register(modbus_t *ctx, int reg_addr, int value);
+int modbus_write_bits(modbus_t *ctx, int addr, int nb, const uint8_t *data);
+int modbus_write_registers(modbus_t *ctx, int addr, int nb, const uint16_t *data);
+int modbus_read_and_write_registers(modbus_t *ctx, int read_addr,
+                                    int read_nb, uint16_t *dest, int write_addr,
+                                    int write_nb, const uint16_t *data);
+int modbus_report_slave_id(modbus_t *ctx, uint8_t *dest);
 
-/* Returns the slave id! */
-int report_slave_id(modbus_param_t *mb_param, int slave, uint8_t *dest);
-
-/* Initializes the modbus_param_t structure for RTU.
-   - device: "/dev/ttyS0"
-   - baud:   9600, 19200, 57600, 115200, etc
-   - parity: "even", "odd" or "none"
-   - data_bits: 5, 6, 7, 8
-   - stop_bits: 1, 2
-*/
-void modbus_init_rtu(modbus_param_t *mb_param, const char *device,
-		     int baud, const char *parity, int data_bit,
-		     int stop_bit);
-
-/* Initializes the modbus_param_t structure for TCP.
-   - ip : "192.168.0.5"
-   - port : 1099
-
-   Set the port to MODBUS_TCP_DEFAULT_PORT to use the default one
-   (502). It's convenient to use a port number greater than or equal
-   to 1024 because it's not necessary to be root to use this port
-   number.
-*/
-void modbus_init_tcp(modbus_param_t *mb_param, const char *ip_address, int port);
-
-/* By default, the error handling mode used is RECONNECT_ON_ERROR.
-
-   With RECONNECT_ON_ERROR, the library will attempt an immediate
-   reconnection which may hang for several seconds if the network to
-   the remote target unit is down.
-
-   With NOP_ON_ERROR, it is expected that the application will
-   check for network error returns and deal with them as necessary.
-
-   This function is only useful in TCP mode.
- */
-void modbus_set_error_handling(modbus_param_t *mb_param, error_handling_t error_handling);
-
-/* Establishes a modbus connexion.
-   Returns -1 if an error occured. */
-int modbus_connect(modbus_param_t *mb_param);
-
-/* Closes a modbus connection */
-void modbus_close(modbus_param_t *mb_param);
-
-/* Activates the debug messages */
-void modbus_set_debug(modbus_param_t *mb_param, int boolean);
-
-/**
- * SLAVE/CLIENT FUNCTIONS
- **/
-
-/* Allocates 4 arrays to store coils, input status, input registers and
-   holding registers. The pointers are stored in modbus_mapping structure.
-
-   Returns: TRUE if ok, FALSE on failure
- */
-int modbus_mapping_new(modbus_mapping_t *mb_mapping,
-		       int nb_coil_status, int nb_input_status,
-		       int nb_holding_registers, int nb_input_registers);
-
-/* Frees the 4 arrays */
+modbus_mapping_t* modbus_mapping_new(int nb_coil_status, int nb_input_status,
+                                     int nb_holding_registers, int nb_input_registers);
 void modbus_mapping_free(modbus_mapping_t *mb_mapping);
 
-/* Initializes the modbus_param_t structure for a TCP slave (server) */
-int modbus_init_listen_tcp(modbus_param_t *mb_param);
+void modbus_poll(modbus_t *ctx);
 
-/* Listens for any query from a modbus master in TCP
-   Not tested in RTU communication. */
-int modbus_listen(modbus_param_t *mb_param, uint8_t *query, int *query_length, int timeout_usec);
-
-/* calls modbus_listen() with small timeout and checks whether received data
-   is a query or response - used for bus-monitoring*/
-void modbus_poll(modbus_param_t *mb_param);
-
-/* Manages the received query.
-   Analyses the query and constructs a response.
-
-   If an error occurs, this function construct the response
-   accordingly.
-*/
-void modbus_manage_query(modbus_param_t *mb_param, const uint8_t *query,
-			 int query_length, modbus_mapping_t *mb_mapping);
-
+int modbus_listen(modbus_t *ctx, int nb_connection);
+int modbus_accept(modbus_t *ctx, int *socket);
+int modbus_receive(modbus_t *ctx, int sockfd, uint8_t *req);
+int modbus_reply(modbus_t *ctx, const uint8_t *req,
+                 int req_length, modbus_mapping_t *mb_mapping);
 
 /**
  * UTILS FUNCTIONS
  **/
 
-/* Sets many input/coil status from a single byte value (all 8 bits of
-   the byte value are setted) */
-void set_bits_from_byte(uint8_t *dest, int address, const uint8_t value);
+#define MODBUS_GET_HIGH_BYTE(data) ((data >> 8) & 0xFF)
+#define MODBUS_GET_LOW_BYTE(data) (data & 0xFF)
 
-/* Sets many input/coil status from a table of bytes (only the bits
-   between address and address + nb_bits are setted) */
-void set_bits_from_bytes(uint8_t *dest, int address, int nb_bits,
-			 const uint8_t *tab_byte);
+void modbus_set_bits_from_byte(uint8_t *dest, int address, const uint8_t value);
+void modbus_set_bits_from_bytes(uint8_t *dest, int address, unsigned int nb_bits,
+                                const uint8_t *tab_byte);
+uint8_t modbus_get_byte_from_bits(const uint8_t *src, int address, unsigned int nb_bits);
+float modbus_get_float(const uint16_t *src);
+void modbus_set_float(float real, uint16_t *dest);
 
-/* Gets the byte value from many input/coil status.
-   To obtain a full byte, set nb_bits to 8. */
-uint8_t get_byte_from_bits(const uint8_t *src, int address, int nb_bits);
+void busMonitorAddItem( uint8_t isOut, uint8_t slave, uint8_t func, uint16_t addr, uint16_t nb, uint16_t crc );
+void busMonitorRawData( uint8_t * data, uint8_t dataLen );
 
-#ifdef __cplusplus
-}
-#endif
+MODBUS_END_DECLS
 
 #endif  /* _MODBUS_H_ */
