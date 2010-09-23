@@ -34,19 +34,15 @@ SET(CMAKE_CXX_FLAGS "-O2 -g -fno-exceptions -Wall ${CMAKE_CXX_FLAGS}")
 SET(qmodbus_SOURCES src/main.cpp 
     src/mainwindow.cpp 
     3rdparty/qextserialport/qextserialport.cpp 
-    3rdparty/qextserialport/qextserialenumerator.cpp 
-    3rdparty/qextserialport/qextserialbase.cpp 
     3rdparty/libmodbus/modbus.c)
 
 SET(qmodbus_INCLUDES src/mainwindow.h 
     3rdparty/qextserialport/qextserialport.h 
     3rdparty/qextserialport/qextserialenumerator.h 
-    3rdparty/qextserialport/qextserialbase.h 
     3rdparty/libmodbus/modbus.h)
 
 IF(WIN32)
-	SET(qmodbus_SOURCES ${qmodbus_SOURCES} 3rdparty/qextserialport/win_qextserialport.cpp)
-	SET(qmodbus_INCLUDES ${qmodbus_INCLUDES} 3rdparty/qextserialport/win_qextserialport.h)
+	SET(qmodbus_SOURCES ${qmodbus_SOURCES} 3rdparty/qextserialport/win_qextserialport.cpp 3rdparty/qextserialport/qextserialenumerator_win.cpp)
 	ADD_DEFINITIONS(-D_TTY_WIN_)
 	LINK_LIBRARIES(-lsetupapi)
 	INSTALL(FILES ${QT_BINARY_DIR}/QtCore4.dll ${QT_BINARY_DIR}/QtGui4.dll ${QT_BINARY_DIR}/mingwm10.dll DESTINATION .)
@@ -58,8 +54,7 @@ IF(WIN32)
 				-i${CMAKE_BINARY_DIR}/qmodbus.rc
 			DEPENDS ${CMAKE_BINARY_DIR}/qmodbus.rc)
 ELSE(WIN32)
-	SET(qmodbus_SOURCES ${qmodbus_SOURCES} 3rdparty/qextserialport/posix_qextserialport.cpp)
-	SET(qmodbus_INCLUDES ${qmodbus_INCLUDES} 3rdparty/qextserialport/posix_qextserialport.h)
+	SET(qmodbus_SOURCES ${qmodbus_SOURCES} 3rdparty/qextserialport/posix_qextserialport.cpp 3rdparty/qextserialport/qextserialenumerator_unix.cpp)
 	ADD_DEFINITIONS(-D_TTY_POSIX_)
 ENDIF(WIN32)
 
