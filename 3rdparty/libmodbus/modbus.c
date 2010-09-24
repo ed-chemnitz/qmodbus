@@ -865,7 +865,8 @@ static int receive_msg(modbus_t *ctx, int msg_length_computed,
     if (ctx->type_com == RTU) {
         /* Returns msg_length on success and a negative value on
            failure */
-        return check_crc16(ctx, msg, msg_length);
+		return msg_length;
+//		return check_crc16(ctx, msg, msg_length);
     } else {
         /* OK */
         return msg_length;
@@ -900,6 +901,7 @@ static int receive_msg_req(modbus_t *ctx, uint8_t *req, uint8_t *rsp)
     int rc;
     int rsp_length_computed;
     int offset = TAB_HEADER_LENGTH[ctx->type_com];
+	int addr = 0;
 
     rsp_length_computed = compute_response_length(ctx, req);
     rc = receive_msg(ctx, rsp_length_computed, rsp, MSG_CONFIRMATION);
@@ -952,10 +954,10 @@ static int receive_msg_req(modbus_t *ctx, uint8_t *req, uint8_t *rsp)
 		{
 			data_len = rsp_nb_value;
 		}
-		busMonitorAddItem( 0, rsp[offset+0], rsp[offset+1],
-							0, nb,
-							( rsp[offset+3+data_len] << 8 ) |
-								rsp[offset+4+data_len] );
+		busMonitorAddItem( 0, rsp[offset-1], rsp[offset+0],
+						   addr, nb,
+							( rsp[offset+4+data_len] << 8 ) |
+								rsp[offset+5+data_len] );
 
         if (req_nb_value == rsp_nb_value) {
             rc = rsp_nb_value;
