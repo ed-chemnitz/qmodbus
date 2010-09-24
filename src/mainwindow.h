@@ -1,7 +1,7 @@
 /*
  * mainwindow.h - header file for MainWindow class
  *
- * Copyright (c) 2009 Tobias Doerffel / Electronic Design Chemnitz
+ * Copyright (c) 2009-2010 Tobias Doerffel / Electronic Design Chemnitz
  *
  * This file is part of QModBus - http://qmodbus.sourceforge.net
  *
@@ -62,7 +62,8 @@ public:
 				uint8_t func,
 				uint16_t addr,
 				uint16_t nb,
-				uint16_t crc );
+				uint16_t expectedCRC,
+				uint16_t actualCRC );
 	void busMonitorRawData( uint8_t * data, uint8_t dataLen );
 
 

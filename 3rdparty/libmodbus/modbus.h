@@ -229,7 +229,7 @@ uint8_t modbus_get_byte_from_bits(const uint8_t *src, int address, unsigned int 
 float modbus_get_float(const uint16_t *src);
 void modbus_set_float(float real, uint16_t *dest);
 
-void busMonitorAddItem( uint8_t isOut, uint8_t slave, uint8_t func, uint16_t addr, uint16_t nb, uint16_t crc );
+void busMonitorAddItem( uint8_t isOut, uint8_t slave, uint8_t func, uint16_t addr, uint16_t nb, uint16_t expectedCRC, uint16_t actualCRC );
 void busMonitorRawData( uint8_t * data, uint8_t dataLen );
 
 MODBUS_END_DECLS

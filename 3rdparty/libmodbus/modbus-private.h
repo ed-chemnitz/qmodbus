@@ -94,6 +94,8 @@ struct _modbus {
     int error_recovery;
     struct timeval timeout_begin;
     struct timeval timeout_end;
+	uint16_t last_crc_expected;
+	uint16_t last_crc_received;
     void *com;
 };
 

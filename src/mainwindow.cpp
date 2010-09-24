@@ -1,7 +1,7 @@
 /*
  * mainwindow.cpp - implementation of MainWindow class
  *
- * Copyright (c) 2009 Tobias Doerffel / Electronic Design Chemnitz
+ * Copyright (c) 2009-2010 Tobias Doerffel / Electronic Design Chemnitz
  *
  * This file is part of QModBus - http://qmodbus.sourceforge.net
  *
@@ -137,7 +137,8 @@ void MainWindow::busMonitorAddItem( bool isRequest,
 					uint8_t func,
 					uint16_t addr,
 					uint16_t nb,
-					uint16_t crc )
+					uint16_t expectedCRC,
+					uint16_t actualCRC )
 {
 	QTableWidget * bm = ui->busMonTable;
 	const int rowCount = bm->rowCount();
@@ -148,7 +149,16 @@ void MainWindow::busMonitorAddItem( bool isRequest,
 	QTableWidgetItem * funcItem = new QTableWidgetItem( QString::number( func ) );
 	QTableWidgetItem * addrItem = new QTableWidgetItem( QString::number( addr ) );
 	QTableWidgetItem * numItem = new QTableWidgetItem( QString::number( nb ) );
-	QTableWidgetItem * crcItem = new QTableWidgetItem( QString().sprintf( "%.4x", crc ) );
+	QTableWidgetItem * crcItem = new QTableWidgetItem;
+	if( expectedCRC == actualCRC )
+	{
+ 		crcItem->setText( QString().sprintf( "%.4x", actualCRC ) );
+	}
+	else
+	{
+ 		crcItem->setText( QString().sprintf( "%.4x (%.4x)", actualCRC, expectedCRC ) );
+		crcItem->setForeground( Qt::red );
+	}
 	ioItem->setFlags( ioItem->flags() & ~Qt::ItemIsEditable );
 	slaveItem->setFlags( slaveItem->flags() & ~Qt::ItemIsEditable );
 	funcItem->setFlags( funcItem->flags() & ~Qt::ItemIsEditable );
@@ -557,9 +567,9 @@ void MainWindow::aboutQModBus( void )
 
 extern "C" {
 
-void busMonitorAddItem( uint8_t isRequest, uint8_t slave, uint8_t func, uint16_t addr, uint16_t nb, uint16_t crc )
+void busMonitorAddItem( uint8_t isRequest, uint8_t slave, uint8_t func, uint16_t addr, uint16_t nb, uint16_t expectedCRC, uint16_t actualCRC )
 {
-	globalMainWin->busMonitorAddItem( isRequest, slave, func, addr, nb, crc );
+	globalMainWin->busMonitorAddItem( isRequest, slave, func, addr, nb, expectedCRC, actualCRC );
 }
 
 void busMonitorRawData( uint8_t * data, uint8_t dataLen )

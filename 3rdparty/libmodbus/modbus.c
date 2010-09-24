@@ -462,7 +462,7 @@ static int send_msg(modbus_t *ctx, uint8_t *req, int req_length)
 	busMonitorAddItem( 1, req[0], req[1],
 						( req[2] << 8 ) + req[3],
 						( req[4] << 8 ) + req[5],
-						s_crc );
+						s_crc, s_crc );
 
     if (ctx->debug) {
         for (i = 0; i < req_length; i++)
@@ -865,6 +865,8 @@ static int receive_msg(modbus_t *ctx, int msg_length_computed,
     if (ctx->type_com == RTU) {
         /* Returns msg_length on success and a negative value on
            failure */
+		ctx->last_crc_expected = crc16( msg, msg_length-2 );
+		ctx->last_crc_received = (msg[msg_length - 2] << 8) | msg[msg_length - 1];
 		return msg_length;
 //		return check_crc16(ctx, msg, msg_length);
     } else {
@@ -901,7 +903,6 @@ static int receive_msg_req(modbus_t *ctx, uint8_t *req, uint8_t *rsp)
     int rc;
     int rsp_length_computed;
     int offset = TAB_HEADER_LENGTH[ctx->type_com];
-	int addr = 0;
 
     rsp_length_computed = compute_response_length(ctx, req);
     rc = receive_msg(ctx, rsp_length_computed, rsp, MSG_CONFIRMATION);
@@ -909,8 +910,8 @@ static int receive_msg_req(modbus_t *ctx, uint8_t *req, uint8_t *rsp)
         /* GOOD RESPONSE */
         int req_nb_value;
         int rsp_nb_value;
-		int data_len = -1;
-		int nb = 0;
+		int num_items = 1;
+		int addr = (req[offset + 1] << 8) + req[offset + 2];
 
         /* The number of values is returned if it's corresponding
          * to the request */
@@ -920,7 +921,7 @@ static int receive_msg_req(modbus_t *ctx, uint8_t *req, uint8_t *rsp)
             /* Read functions, 8 values in a byte (nb
              * of values in the request and byte count in
              * the response. */
-            nb = req_nb_value = (req[offset + 3] << 8) + req[offset + 4];
+            req_nb_value = (req[offset + 3] << 8) + req[offset + 4];
             req_nb_value = (req_nb_value / 8) + ((req_nb_value % 8) ? 1 : 0);
             rsp_nb_value = rsp[offset + 1];
             break;
@@ -930,16 +931,12 @@ static int receive_msg_req(modbus_t *ctx, uint8_t *req, uint8_t *rsp)
             /* Read functions 1 value = 2 bytes */
             req_nb_value = (req[offset + 3] << 8) + req[offset + 4];
             rsp_nb_value = (rsp[offset + 1] / 2);
-			nb = rsp_nb_value;
-            data_len = rsp[offset + 1];
             break;
         case FC_WRITE_MULTIPLE_COILS:
         case FC_WRITE_MULTIPLE_REGISTERS:
             /* N Write functions */
             req_nb_value = (req[offset + 3] << 8) + req[offset + 4];
             rsp_nb_value = (rsp[offset + 3] << 8) | rsp[offset + 4];
-			nb = rsp_nb_value;
-			data_len = 3;
             break;
         case FC_REPORT_SLAVE_ID:
             /* Report slave ID (bytes received) */
@@ -950,14 +947,33 @@ static int receive_msg_req(modbus_t *ctx, uint8_t *req, uint8_t *rsp)
             req_nb_value = rsp_nb_value = 1;
         }
 
-		if( data_len < 0 )
+		num_items = rsp_nb_value;
+		switch (rsp[offset])
 		{
-			data_len = rsp_nb_value;
+			case FC_READ_COILS:
+			case FC_READ_DISCRETE_INPUTS:
+				num_items = rsp_nb_value*8;
+				break;
+			case FC_READ_AND_WRITE_REGISTERS:
+			case FC_READ_HOLDING_REGISTERS:
+			case FC_READ_INPUT_REGISTERS:
+				num_items = rsp_nb_value/2;
+				break;
+			case FC_WRITE_MULTIPLE_COILS:
+			case FC_WRITE_MULTIPLE_REGISTERS:
+				addr = (rsp[offset + 1] << 8) | rsp[offset + 2];
+				num_items = rsp_nb_value;
+				break;
+			default:
+				break;
 		}
 		busMonitorAddItem( 0, rsp[offset-1], rsp[offset+0],
-						   addr, nb,
-							( rsp[offset+4+data_len] << 8 ) |
-								rsp[offset+5+data_len] );
+						   addr, num_items,
+							ctx->last_crc_expected,
+							ctx->last_crc_received
+					//		( rsp[offset+req_nb_value+4] << 8 ) |
+					//			rsp[offset+req_nb_value+5]
+);
 
         if (req_nb_value == rsp_nb_value) {
             rc = rsp_nb_value;
@@ -2700,7 +2716,9 @@ void modbus_poll(modbus_t* ctx)
 					func,				/* func */
 					addr,				/* addr */
 					nb,				/* nb */
-					( msg[msg_len-2] << 8 ) | msg[msg_len-1]	/* CRC */
+					ctx->last_crc_expected,
+					ctx->last_crc_received
+					//( msg[msg_len-2] << 8 ) | msg[msg_len-1]	/* CRC */
 				);
 	}
 }
