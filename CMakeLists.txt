@@ -45,7 +45,7 @@ IF(WIN32)
 	SET(qmodbus_SOURCES ${qmodbus_SOURCES} 3rdparty/qextserialport/win_qextserialport.cpp 3rdparty/qextserialport/qextserialenumerator_win.cpp)
 	ADD_DEFINITIONS(-D_TTY_WIN_)
 	LINK_LIBRARIES(-lsetupapi)
-	INSTALL(FILES ${QT_BINARY_DIR}/QtCore4.dll ${QT_BINARY_DIR}/QtGui4.dll ${QT_BINARY_DIR}/mingwm10.dll DESTINATION .)
+	INSTALL(FILES ${QT_BINARY_DIR}/QtCore4.dll ${QT_BINARY_DIR}/QtGui4.dll ${QT_BINARY_DIR}/zlib1.dll DESTINATION .)
 	SET(WINRC "${CMAKE_BINARY_DIR}/qmodbusrc.obj")
 	ADD_CUSTOM_COMMAND(OUTPUT ${WINRC}
 			COMMAND ${WINDRES}
