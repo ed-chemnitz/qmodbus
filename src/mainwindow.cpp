@@ -49,20 +49,25 @@ MainWindow::MainWindow( QWidget * _parent ) :
 {
 	ui->setupUi(this);
 
-	QSettings settings;
+	QSettings s;
 
 	int portIndex = 0;
 	int i = 0;
 	foreach( QextPortInfo port, QextSerialEnumerator::getPorts() )
 	{
 		ui->serialPort->addItem( port.friendName );
-		if( port.friendName == settings.value( "serialinterface" ) )
+		if( port.friendName == s.value( "serialinterface" ) )
 		{
 			portIndex = i;
 		}
 		++i;
 	}
 	ui->serialPort->setCurrentIndex( portIndex );
+
+	ui->baud->setCurrentIndex( ui->baud->findText( s.value( "serialbaudrate" ).toString() ) );
+	ui->parity->setCurrentIndex( ui->parity->findText( s.value( "serialparity" ).toString() ) );
+	ui->stopBits->setCurrentIndex( ui->stopBits->findText( s.value( "serialstopbits" ).toString() ) );
+	ui->dataBits->setCurrentIndex( ui->dataBits->findText( s.value( "serialdatabits" ).toString() ) );
 
 	connect( ui->serialPort, SIGNAL( currentIndexChanged( int ) ),
 			this, SLOT( changeSerialPort( int ) ) );
@@ -256,6 +261,10 @@ void MainWindow::changeSerialPort( int )
 	{
 		QSettings settings;
 		settings.setValue( "serialinterface", ports[iface].friendName );
+		settings.setValue( "serialbaudrate", ui->baud->currentText() );
+		settings.setValue( "serialparity", ui->parity->currentText() );
+		settings.setValue( "serialdatabits", ui->dataBits->currentText() );
+		settings.setValue( "serialstopbits", ui->stopBits->currentText() );
 #ifdef Q_OS_WIN32
 		const QString port = embracedString( ports[iface].friendName ) +
 									":";
