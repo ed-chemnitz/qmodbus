@@ -150,14 +150,24 @@ void MainWindow::busMonitorAddItem( bool isRequest,
 	QTableWidgetItem * addrItem = new QTableWidgetItem( QString::number( addr ) );
 	QTableWidgetItem * numItem = new QTableWidgetItem( QString::number( nb ) );
 	QTableWidgetItem * crcItem = new QTableWidgetItem;
-	if( expectedCRC == actualCRC )
+	if( func > 127 )
 	{
- 		crcItem->setText( QString().sprintf( "%.4x", actualCRC ) );
+		addrItem->setText( QString() );
+		numItem->setText( QString() );
+		funcItem->setText( tr( "Exception (%1)" ).arg( func-128 ) );
+		funcItem->setForeground( Qt::red );
 	}
 	else
 	{
- 		crcItem->setText( QString().sprintf( "%.4x (%.4x)", actualCRC, expectedCRC ) );
-		crcItem->setForeground( Qt::red );
+		if( expectedCRC == actualCRC )
+		{
+			crcItem->setText( QString().sprintf( "%.4x", actualCRC ) );
+		}
+		else
+		{
+			crcItem->setText( QString().sprintf( "%.4x (%.4x)", actualCRC, expectedCRC ) );
+			crcItem->setForeground( Qt::red );
+		}
 	}
 	ioItem->setFlags( ioItem->flags() & ~Qt::ItemIsEditable );
 	slaveItem->setFlags( slaveItem->flags() & ~Qt::ItemIsEditable );
