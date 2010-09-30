@@ -39,7 +39,7 @@ public:
 	{
 		setupUi( this );
 		aboutTextLabel->setText(
-			aboutTextLabel->text().arg( "0.1.0" ) );
+			aboutTextLabel->text().arg( "0.2.0" ) );
 	}
 } ;
 
