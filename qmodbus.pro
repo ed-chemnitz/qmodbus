@@ -4,7 +4,10 @@ VERSION = 0.1.0
 SOURCES += src/main.cpp \
     src/mainwindow.cpp \
     3rdparty/qextserialport/qextserialport.cpp	\
-    3rdparty/libmodbus/modbus.c
+	3rdparty/libmodbus/modbus.c \
+	3rdparty/libmodbus/modbus-data.c \
+	3rdparty/libmodbus/modbus-rtu.c \
+	3rdparty/libmodbus/modbus-tcp.c
 HEADERS += src/mainwindow.h \
     3rdparty/qextserialport/qextserialport.h \
     3rdparty/qextserialport/qextserialenumerator.h \

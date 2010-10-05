@@ -34,7 +34,10 @@ SET(CMAKE_CXX_FLAGS "-O2 -g -fno-exceptions -Wall ${CMAKE_CXX_FLAGS}")
 SET(qmodbus_SOURCES src/main.cpp 
     src/mainwindow.cpp 
     3rdparty/qextserialport/qextserialport.cpp 
-    3rdparty/libmodbus/modbus.c)
+	3rdparty/libmodbus/modbus.c
+	3rdparty/libmodbus/modbus-data.c
+	3rdparty/libmodbus/modbus-rtu.c
+	3rdparty/libmodbus/modbus-tcp.c)
 
 SET(qmodbus_INCLUDES src/mainwindow.h 
     3rdparty/qextserialport/qextserialport.h 
@@ -44,7 +47,7 @@ SET(qmodbus_INCLUDES src/mainwindow.h
 IF(WIN32)
 	SET(qmodbus_SOURCES ${qmodbus_SOURCES} 3rdparty/qextserialport/win_qextserialport.cpp 3rdparty/qextserialport/qextserialenumerator_win.cpp)
 	ADD_DEFINITIONS(-D_TTY_WIN_)
-	LINK_LIBRARIES(-lsetupapi)
+	LINK_LIBRARIES(-lsetupapi -lwsock32)
 	INSTALL(FILES ${QT_BINARY_DIR}/QtCore4.dll ${QT_BINARY_DIR}/QtGui4.dll ${QT_BINARY_DIR}/zlib1.dll DESTINATION .)
 	SET(WINRC "${CMAKE_BINARY_DIR}/qmodbusrc.obj")
 	ADD_CUSTOM_COMMAND(OUTPUT ${WINRC}
