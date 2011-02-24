@@ -435,8 +435,6 @@ void MainWindow::sendModbusRequest( void )
 
 	modbus_set_slave( m_modbus, slave );
 
-    QString rawDataBeforeSend = ui->rawData->toPlainText();
-
 	switch( func )
 	{
 		case _FC_READ_COILS:
@@ -546,7 +544,7 @@ void MainWindow::sendModbusRequest( void )
 	{
 		if( ret < 0 )
 		{
-			if( rawDataBeforeSend == ui->rawData->toPlainText() ||
+			if(
 #ifdef WIN32
 					errno == WSAETIMEDOUT ||
 #endif
