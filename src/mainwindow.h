@@ -64,7 +64,7 @@ public:
 				uint16_t nb,
 				uint16_t expectedCRC,
 				uint16_t actualCRC );
-	void busMonitorRawData( uint8_t * data, uint8_t dataLen );
+	void busMonitorRawData( uint8_t * data, uint8_t dataLen, bool addNewline );
 
 
 private slots:

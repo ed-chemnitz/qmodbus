@@ -126,7 +126,7 @@ MainWindow::MainWindow( QWidget * _parent ) :
 
 	QTimer * t = new QTimer( this );
 	connect( t, SIGNAL(timeout()), this, SLOT(pollForDataOnBus()));
-	t->start( 10 );
+	t->start( 5 );
 }
 
 
@@ -194,20 +194,23 @@ void MainWindow::busMonitorAddItem( bool isRequest,
 
 
 
-void MainWindow::busMonitorRawData( uint8_t * data, uint8_t dataLen )
+void MainWindow::busMonitorRawData( uint8_t * data, uint8_t dataLen, bool addNewline )
 {
-	QString dump = ui->rawData->toPlainText();
-	if( !dump.isEmpty() )
+	if( dataLen > 0 )
 	{
-		dump += "\n";
+		QString dump = ui->rawData->toPlainText();
+		for( int i = 0; i < dataLen; ++i )
+		{
+			dump += QString().sprintf( "%.2x ", data[i] );
+		}
+		if( addNewline )
+		{
+			dump += "\n";
+		}
+		ui->rawData->setPlainText( dump );
+		ui->rawData->verticalScrollBar()->setValue( 100000 );
+		ui->rawData->setLineWrapMode( QPlainTextEdit::NoWrap );
 	}
-	for( int i = 0; i < dataLen; ++i )
-	{
-		dump += QString().sprintf( "%.2x ", data[i] );
-	}
-	ui->rawData->setPlainText( dump );
-	ui->rawData->verticalScrollBar()->setValue( 100000 );
-	ui->rawData->setLineWrapMode( QPlainTextEdit::NoWrap );
 }
 
 
@@ -608,9 +611,9 @@ void busMonitorAddItem( uint8_t isRequest, uint8_t slave, uint8_t func, uint16_t
 	globalMainWin->busMonitorAddItem( isRequest, slave, func, addr, nb, expectedCRC, actualCRC );
 }
 
-void busMonitorRawData( uint8_t * data, uint8_t dataLen )
+void busMonitorRawData( uint8_t * data, uint8_t dataLen, uint8_t addNewline )
 {
-	globalMainWin->busMonitorRawData( data, dataLen );
+	globalMainWin->busMonitorRawData( data, dataLen, addNewline != 0 );
 }
 
 }

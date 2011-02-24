@@ -336,7 +336,7 @@ static int receive_msg(modbus_t *ctx, uint8_t *msg, msg_type_t msg_type)
         }
 
 		// -- BEGIN QMODBUS MODIFICATION --
-		busMonitorRawData( p_msg, rc );
+		busMonitorRawData( p_msg, rc, ( step == _STEP_DATA && length_to_read-rc == 0 ) ? 1 : 0 );
 		// -- END QMODBUS MODIFICATION --
 
         /* Display the hex code of each character received */

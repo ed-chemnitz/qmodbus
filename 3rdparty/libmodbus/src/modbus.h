@@ -203,7 +203,7 @@ void modbus_set_float(float real, uint16_t *dest);
 #include "modbus-rtu.h"
 
 void busMonitorAddItem( uint8_t isOut, uint8_t slave, uint8_t func, uint16_t addr, uint16_t nb, uint16_t expectedCRC, uint16_t actualCRC );
-void busMonitorRawData( uint8_t * data, uint8_t dataLen );
+void busMonitorRawData( uint8_t * data, uint8_t dataLen, uint8_t addNewline );
 
 MODBUS_END_DECLS
 
