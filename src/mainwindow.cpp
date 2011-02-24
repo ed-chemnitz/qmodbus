@@ -28,6 +28,8 @@
 #include <QtGui/QMessageBox>
 #include <QtGui/QScrollBar>
 
+#include <errno.h>
+
 #include "mainwindow.h"
 #include "modbus.h"
 #include "modbus-private.h"
@@ -430,6 +432,8 @@ void MainWindow::sendModbusRequest( void )
 
 	modbus_set_slave( m_modbus, slave );
 
+    QString rawDataBeforeSend = ui->rawData->toPlainText();
+
 	switch( func )
 	{
 		case _FC_READ_COILS:
@@ -539,10 +543,23 @@ void MainWindow::sendModbusRequest( void )
 	{
 		if( ret < 0 )
 		{
-			QMessageBox::critical( this, tr( "Protocol error" ),
-				tr( "Slave threw exception %1 or "
-					"function not implemented." ).
-								arg( ret ) );
+			if( rawDataBeforeSend == ui->rawData->toPlainText() ||
+#ifdef WIN32
+					errno == WSAETIMEDOUT ||
+#endif
+					errno == EIO
+																	)
+			{
+				QMessageBox::critical( this, tr( "I/O error" ),
+					tr( "I/O error: did not receive any data from slave." ) );
+			}
+			else
+			{
+				QMessageBox::critical( this, tr( "Protocol error" ),
+					tr( "Slave threw exception \"%1\" or "
+						"function not implemented." ).
+								arg( modbus_strerror( errno ) ) );
+			}
 		}
 		else
 		{
