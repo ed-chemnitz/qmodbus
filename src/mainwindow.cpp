@@ -126,7 +126,7 @@ MainWindow::MainWindow( QWidget * _parent ) :
 
 	QTimer * t = new QTimer( this );
 	connect( t, SIGNAL(timeout()), this, SLOT(pollForDataOnBus()));
-	t->start( 1 );
+	t->start( 10 );
 }
 
 
