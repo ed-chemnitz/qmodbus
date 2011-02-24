@@ -18,6 +18,11 @@
 #ifndef _MODBUS_PRIVATE_H_
 #define _MODBUS_PRIVATE_H_
 
+#include <sys/time.h>
+#include <sys/types.h>
+#include <stdint.h>
+
+#include <config.h>
 #include "modbus.h"
 
 MODBUS_BEGIN_DECLS
@@ -83,9 +88,7 @@ typedef struct _modbus_backend {
     int (*connect) (modbus_t *ctx);
     void (*close) (modbus_t *ctx);
     int (*flush) (modbus_t *ctx);
-    int (*listen) (modbus_t *ctx, int nb_connection);
-    int (*accept) (modbus_t *ctx, int *socket);
-    int (*select) (modbus_t *ctx, fd_set *rfds, struct timeval *tv, int msg_length_computed, int msg_length);
+    int (*select) (modbus_t *ctx, fd_set *rfds, struct timeval *tv, int msg_length);
     int (*filter_request) (modbus_t *ctx, int slave);
 } modbus_backend_t;
 
@@ -106,6 +109,10 @@ struct _modbus {
 
 void _modbus_init_common(modbus_t *ctx);
 void _error_print(modbus_t *ctx, const char *context);
+
+#ifndef HAVE_STRLCPY
+size_t strlcpy(char *dest, const char *src, size_t dest_size);
+#endif
 
 MODBUS_END_DECLS
 

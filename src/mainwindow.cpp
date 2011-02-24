@@ -291,7 +291,7 @@ void MainWindow::changeSerialPort( int )
 				ui->baud->currentText().toInt(),
 				parity,
 				ui->dataBits->currentText().toInt(),
-				ui->stopBits->currentText().toInt(), 1 );
+				ui->stopBits->currentText().toInt() );
 
 		if( modbus_connect( m_modbus ) == -1 )
 		{

@@ -1,0 +1,231 @@
+Nur in /home/toby/h/qmodbus/3rdparty/libmodbus/: AUTHORS.
+Nur in /home/toby/h/qmodbus/3rdparty/libmodbus/: config.h.
+Nur in /home/toby/h/qmodbus/3rdparty/libmodbus/: COPYING.
+Nur in /home/toby/h/qmodbus/3rdparty/libmodbus/: COPYING.LESSER.
+Nur in src/: Makefile.am.
+Nur in /home/toby/h/qmodbus/3rdparty/libmodbus/: MIGRATION.
+diff -upr src//modbus.c /home/toby/h/qmodbus/3rdparty/libmodbus//modbus.c
+--- src//modbus.c	2011-02-24 10:36:59.285493218 +0100
++++ /home/toby/h/qmodbus/3rdparty/libmodbus//modbus.c	2010-10-05 14:57:44.000000000 +0200
+@@ -273,11 +273,9 @@ static int receive_msg(modbus_t *ctx, in
+     FD_ZERO(&rfds);
+     FD_SET(ctx->s, &rfds);
+ 
++    tv.tv_sec = ctx->timeout_begin.tv_sec;
++    tv.tv_usec = ctx->timeout_begin.tv_usec;
+     if (msg_length_computed == MSG_LENGTH_UNDEFINED) {
+-        /* Wait for a message */
+-        tv.tv_sec = 60;
+-        tv.tv_usec = 0;
+-
+         /* The message length is undefined (request receiving) so we need to
+          * analyse the message step by step.  At the first step, we want to
+          * reach the function code because all packets contains this
+@@ -285,8 +283,6 @@ static int receive_msg(modbus_t *ctx, in
+         state = FUNCTION;
+         msg_length_computed = ctx->backend->header_length + 1;
+     } else {
+-        tv.tv_sec = ctx->timeout_begin.tv_sec;
+-        tv.tv_usec = ctx->timeout_begin.tv_usec;
+         state = COMPLETE;
+     }
+ 
+@@ -327,6 +323,7 @@ static int receive_msg(modbus_t *ctx, in
+             for (i=0; i < read_rc; i++)
+                 printf("<%.2X>", p_msg[i]);
+         }
++		busMonitorRawData( p_msg, read_rc );
+ 
+         if (msg_length < msg_length_computed) {
+             /* Message incomplete */
+@@ -414,6 +411,13 @@ static int receive_msg_req(modbus_t *ctx
+     int rsp_length_computed;
+     int offset = ctx->backend->header_length;
+ 
++	int s_crc = 0; // TODO
++	busMonitorAddItem( 1, req[0], req[1],
++							( req[2] << 8 ) + req[3],
++							( req[4] << 8 ) + req[5],
++							s_crc, s_crc );
++
++
+     rsp_length_computed = compute_response_length(ctx, req);
+     rc = receive_msg(ctx, rsp_length_computed, rsp, MSG_CONFIRMATION);
+     if (rc != -1) {
+@@ -421,6 +425,8 @@ static int receive_msg_req(modbus_t *ctx
+         int req_nb_value;
+         int rsp_nb_value;
+         int function = rsp[offset];
++		int num_items = 1;
++		int addr = (req[offset + 1] << 8) + req[offset + 2];
+ 
+         if (function != req[offset]) {
+             if (ctx->debug) {
+@@ -466,6 +472,34 @@ static int receive_msg_req(modbus_t *ctx
+             req_nb_value = rsp_nb_value = 1;
+         }
+ 
++		num_items = rsp_nb_value;
++		switch (function)
++		{
++			case _FC_READ_COILS:
++			case _FC_READ_DISCRETE_INPUTS:
++				num_items = rsp_nb_value*8;
++				break;
++			case _FC_READ_AND_WRITE_REGISTERS:
++			case _FC_READ_HOLDING_REGISTERS:
++			case _FC_READ_INPUT_REGISTERS:
++				num_items = rsp_nb_value/2;
++				break;
++			case _FC_WRITE_MULTIPLE_COILS:
++			case _FC_WRITE_MULTIPLE_REGISTERS:
++				addr = (rsp[offset + 1] << 8) | rsp[offset + 2];
++				num_items = rsp_nb_value;
++				break;
++			default:
++				break;
++		}
++		busMonitorAddItem( 0, rsp[offset-1], rsp[offset+0],
++						   addr, num_items,
++							ctx->last_crc_expected,
++							ctx->last_crc_received
++					//		( rsp[offset+req_nb_value+4] << 8 ) |
++					//			rsp[offset+req_nb_value+5]
++);
++
+         if (req_nb_value == rsp_nb_value) {
+             rc = rsp_nb_value;
+         } else {
+@@ -1421,3 +1455,77 @@ int modbus_accept(modbus_t *ctx, int *so
+ {
+     return ctx->backend->accept(ctx, socket);
+ }
++
++
++void modbus_poll(modbus_t* ctx)
++{
++	uint8_t msg[MAX_MESSAGE_LENGTH];
++	uint8_t msg_len = 0;
++
++    struct timeval tv;
++	tv.tv_sec = 0;
++	tv.tv_usec = 500;
++	modbus_set_timeout_begin( ctx, &tv );
++	const int ret = receive_msg( ctx, MSG_LENGTH_UNDEFINED, &msg_len, MSG_CONFIRMATION );	/* wait for 0.5 ms */
++	tv.tv_usec = _TIME_OUT_BEGIN_OF_TRAME;
++	modbus_set_timeout_begin( ctx, &tv );
++	if( ( ret < 0 && msg_len > 0 ) || ret >= 0 )
++	{
++		const int o = ctx->backend->header_length;
++		const int slave = msg[o+0];
++		const int func = msg[o+1];
++		const int datalen = msg_len - ctx->backend->header_length - ctx->backend->checksum_length - 2;
++		int addr = 0;
++		int nb = -1;
++		int isQuery = 1;
++		switch( func )
++		{
++			case _FC_READ_COILS:
++			case _FC_READ_DISCRETE_INPUTS:
++				if( msg[o+2] == datalen-1 )
++				{
++					isQuery = 0;
++					nb = (datalen-1) * 8;
++				}
++				break;
++			case _FC_READ_HOLDING_REGISTERS:
++			case _FC_READ_INPUT_REGISTERS:
++				if( msg[o+2] == datalen-1 )
++				{
++					isQuery = 0;
++					nb = (datalen-1) / 2;
++				}
++				break;
++			case _FC_WRITE_SINGLE_COIL:
++			case _FC_WRITE_SINGLE_REGISTER:
++				/* can't decide from message whether it is a query or response */
++				isQuery = 0;
++				nb = 1;
++				addr = ( msg[o+2] << 8 ) | msg[o+3];
++				break;
++			case _FC_REPORT_SLAVE_ID:
++				nb = 0;
++			case _FC_WRITE_MULTIPLE_REGISTERS:
++			case _FC_WRITE_MULTIPLE_COILS:
++			default:
++				/* can't decide from message whether it is a query or response */
++				isQuery = 0;
++				break;
++		}
++		if( nb == -1 )	/* is query or a write-response? */
++		{
++			addr = ( msg[o+2] << 8 ) | msg[o+3];
++			nb = ( msg[o+4] << 8 ) | msg[o+5];
++		}
++		busMonitorAddItem( isQuery,				/* is query */
++					slave,				/* slave */
++					func,				/* func */
++					addr,				/* addr */
++					nb,				/* nb */
++					ctx->last_crc_expected,
++					ctx->last_crc_received
++					//( msg[msg_len-2] << 8 ) | msg[msg_len-1]	/* CRC */
++				);
++	}
++}
++
+diff -upr src//modbus.h /home/toby/h/qmodbus/3rdparty/libmodbus//modbus.h
+--- src//modbus.h	2011-02-24 10:36:59.285493218 +0100
++++ /home/toby/h/qmodbus/3rdparty/libmodbus//modbus.h	2010-10-05 14:51:56.000000000 +0200
+@@ -37,6 +37,7 @@
+ #include <sys/param.h>
+ #endif
+ #include <stdint.h>
++#include <sys/types.h>
+ #ifndef NATIVE_WIN32
+ #include <termios.h>
+ #if defined(OpenBSD) || (defined(__FreeBSD__) && __FreeBSD__ < 5)
+@@ -189,6 +190,8 @@ modbus_mapping_t* modbus_mapping_new(int
+                                      int nb_holding_registers, int nb_input_registers);
+ void modbus_mapping_free(modbus_mapping_t *mb_mapping);
+ 
++void modbus_poll(modbus_t *ctx);
++
+ int modbus_listen(modbus_t *ctx, int nb_connection);
+ int modbus_accept(modbus_t *ctx, int *socket);
+ int modbus_receive(modbus_t *ctx, int sockfd, uint8_t *req);
+@@ -212,6 +215,9 @@ void modbus_set_float(float real, uint16
+ #include "modbus-tcp.h"
+ #include "modbus-rtu.h"
+ 
++void busMonitorAddItem( uint8_t isOut, uint8_t slave, uint8_t func, uint16_t addr, uint16_t nb, uint16_t expectedCRC, uint16_t actualCRC );
++void busMonitorRawData( uint8_t * data, uint8_t dataLen );
++
+ MODBUS_END_DECLS
+ 
+ #endif  /* _MODBUS_H_ */
+diff -upr src//modbus-private.h /home/toby/h/qmodbus/3rdparty/libmodbus//modbus-private.h
+--- src//modbus-private.h	2011-02-24 10:36:59.275493345 +0100
++++ /home/toby/h/qmodbus/3rdparty/libmodbus//modbus-private.h	2010-10-05 14:50:09.000000000 +0200
+@@ -98,6 +98,8 @@ struct _modbus {
+     int error_recovery;
+     struct timeval timeout_begin;
+     struct timeval timeout_end;
++	uint16_t last_crc_expected;
++	uint16_t last_crc_received;
+     const modbus_backend_t *backend;
+     void *backend_data;
+ };
+diff -upr src//modbus-rtu.c /home/toby/h/qmodbus/3rdparty/libmodbus//modbus-rtu.c
+--- src//modbus-rtu.c	2011-02-24 10:36:59.275493345 +0100
++++ /home/toby/h/qmodbus/3rdparty/libmodbus//modbus-rtu.c	2010-10-05 14:59:12.000000000 +0200
+@@ -261,6 +261,9 @@ int _modbus_rtu_check_integrity(modbus_t
+     crc_calculated = crc16(msg, msg_length - 2);
+     crc_received = (msg[msg_length - 2] << 8) | msg[msg_length - 1];
+ 
++	ctx->last_crc_expected = crc_calculated;
++	ctx->last_crc_received = crc_received;
++
+     /* Check CRC of msg */
+     if (crc_calculated == crc_received) {
+         return msg_length;

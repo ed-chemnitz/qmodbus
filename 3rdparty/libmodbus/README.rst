@@ -19,7 +19,7 @@ directory is GPL v3.
 The official website is http://www.libmodbus.org.
 
 The library is written in C and designed to run on Linux, Mac OS X, FreeBSD and
-QNX (UNIX-like OS).
+QNX and Windows.
 
 Installation
 ------------
@@ -38,6 +38,6 @@ Report a Bug
 ------------
 
 To report a bug, you can:
- * send an email to stephane.raimbault@gmail.com
- * or fill a bug report on the issue tracker
+ * fill a bug report on the issue tracker
    http://github.com/stephane/libmodbus/issues
+ * or send an email to stephane.raimbault@gmail.com

@@ -20,8 +20,9 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
+#include <unistd.h>
+#include <assert.h>
 
-#include "modbus.h"
 #include "modbus-private.h"
 
 #include "modbus-rtu.h"
@@ -87,9 +88,12 @@ static const uint8_t table_crc_lo[] = {
     0x43, 0x83, 0x41, 0x81, 0x80, 0x40
 };
 
+/* Define the slave ID of the remote device to talk in master mode or set the
+ * internal slave ID in slave mode */
 static int _modbus_set_slave(modbus_t *ctx, int slave)
 {
-    if (slave >= 1 && slave <= 247) {
+    /* Broadcast address is 0 (MODBUS_BROADCAST_ADDRESS) */
+    if (slave >= 0 && slave <= 247) {
         ctx->slave = slave;
     } else {
         errno = EINVAL;
@@ -104,6 +108,7 @@ static int _modbus_rtu_build_request_basis(modbus_t *ctx, int function,
                                            int addr, int nb,
                                            uint8_t *req)
 {
+    assert(ctx->slave != -1);
     req[0] = ctx->slave;
     req[1] = function;
     req[2] = addr >> 8;
@@ -117,6 +122,8 @@ static int _modbus_rtu_build_request_basis(modbus_t *ctx, int function,
 /* Builds a RTU response header */
 static int _modbus_rtu_build_response_basis(sft_t *sft, uint8_t *rsp)
 {
+    /* In this case, the slave is certainly valid because a check is already
+     * done in _modbus_rtu_listen */
     rsp[0] = sft->slave;
     rsp[1] = sft->function;
 
@@ -155,7 +162,7 @@ int _modbus_rtu_send_msg_pre(uint8_t *req, int req_length)
     return req_length;
 }
 
-#ifdef NATIVE_WIN32
+#if defined(_WIN32)
 /* This simple implementation is sort of a substitute of the select() call, working
  * this way: the win32_ser_select() call tries to read some data from the serial port,
  * setting the timeout as the select() call would. Data read is stored into the
@@ -172,12 +179,13 @@ static void win32_ser_init(struct win32_ser *ws) {
     ws->fd = INVALID_HANDLE_VALUE;
 }
 
+/* FIXME Try to remove length_to_read -> max_len argument, only used by win32 */
 static int win32_ser_select(struct win32_ser *ws, int max_len, struct timeval *tv) {
     COMMTIMEOUTS comm_to;
     unsigned int msec = 0;
 
     /* Check if some data still in the buffer to be consumed */
-    if (ws->n_bytes> 0) {
+    if (ws->n_bytes > 0) {
         return 1;
     }
 
@@ -232,7 +240,7 @@ static int win32_ser_read(struct win32_ser *ws, uint8_t *p_msg, unsigned int max
 
 ssize_t _modbus_rtu_send(modbus_t *ctx, const uint8_t *req, int req_length)
 {
-#ifdef NATIVE_WIN32
+#if defined(_WIN32)
     modbus_rtu_t *ctx_rtu = ctx->backend_data;
     DWORD n_bytes = 0;
     return (WriteFile(ctx_rtu->w_ser.fd, req, req_length, &n_bytes, NULL)) ? n_bytes : -1;
@@ -243,12 +251,14 @@ ssize_t _modbus_rtu_send(modbus_t *ctx, const uint8_t *req, int req_length)
 
 ssize_t _modbus_rtu_recv(modbus_t *ctx, uint8_t *rsp, int rsp_length)
 {
-#ifdef NATIVE_WIN32
+#if defined(_WIN32)
     return win32_ser_read(&((modbus_rtu_t *)ctx->backend_data)->w_ser, rsp, rsp_length);
 #else
     return read(ctx->s, rsp, rsp_length);
 #endif
 }
+
+int _modbus_rtu_flush(modbus_t *);
 
 /* The check_crc16 function shall return the message length if the CRC is
    valid. Otherwise it shall return -1 and set errno to EMBADCRC. */
@@ -283,7 +293,7 @@ int _modbus_rtu_check_integrity(modbus_t *ctx, uint8_t *msg,
 /* Sets up a serial port for RTU communications */
 static int _modbus_rtu_connect(modbus_t *ctx)
 {
-#ifdef NATIVE_WIN32
+#if defined(_WIN32)
     DCB dcb;
 #else
     struct termios tios;
@@ -297,7 +307,7 @@ static int _modbus_rtu_connect(modbus_t *ctx)
                ctx_rtu->data_bit, ctx_rtu->stop_bit);
     }
 
-#ifdef NATIVE_WIN32
+#if defined(_WIN32)
     /* Some references here:
      * http://msdn.microsoft.com/en-us/library/aa450602.aspx
      */
@@ -681,7 +691,7 @@ void _modbus_rtu_close(modbus_t *ctx)
     /* Closes the file descriptor in RTU mode */
     modbus_rtu_t *ctx_rtu = ctx->backend_data;
 
-#ifdef NATIVE_WIN32
+#if defined(_WIN32)
     /* Revert settings */
     if (!SetCommState(ctx_rtu->w_ser.fd, &ctx_rtu->old_dcb))
         fprintf(stderr, "ERROR Couldn't revert to configuration (LastError %d)\n",
@@ -698,40 +708,20 @@ void _modbus_rtu_close(modbus_t *ctx)
 
 int _modbus_rtu_flush(modbus_t *ctx)
 {
-#ifdef NATIVE_WIN32
+#if defined(_WIN32)
     modbus_rtu_t *ctx_rtu = ctx->backend_data;
     ctx_rtu->w_ser.n_bytes = 0;
-    return ( FlushFileBuffers(ctx_rtu->w_ser.fd) == FALSE );
+    return (FlushFileBuffers(ctx_rtu->w_ser.fd) == FALSE);
 #else
     return tcflush(ctx->s, TCIOFLUSH);
 #endif
 }
 
-int _modbus_rtu_listen(modbus_t *ctx, int nb_connection)
-{
-    if (ctx->debug) {
-        fprintf(stderr, "Not implemented");
-    }
-
-    errno = EINVAL;
-    return -1;
-}
-
-int _modbus_rtu_accept(modbus_t *ctx, int *socket)
-{
-    if (ctx->debug) {
-        fprintf(stderr, "Not implemented");
-    }
-
-    errno = EINVAL;
-    return -1;
-}
-
-int _modbus_rtu_select(modbus_t *ctx, fd_set *rfds, struct timeval *tv, int msg_length_computed, int msg_length)
+int _modbus_rtu_select(modbus_t *ctx, fd_set *rfds, struct timeval *tv, int length_to_read)
 {
     int s_rc;
-#ifdef NATIVE_WIN32
-    s_rc = win32_ser_select(&(((modbus_rtu_t*)ctx->backend_data)->w_ser), msg_length_computed, tv);
+#if defined(_WIN32)
+    s_rc = win32_ser_select(&(((modbus_rtu_t*)ctx->backend_data)->w_ser), length_to_read, tv);
     if (s_rc == 0) {
         errno = ETIMEDOUT;
         return -1;
@@ -772,17 +762,8 @@ int _modbus_rtu_select(modbus_t *ctx, fd_set *rfds, struct timeval *tv, int msg_
 
     if (s_rc == 0) {
         /* Timeout */
-        if (msg_length == (ctx->backend->header_length + 2 +
-                           ctx->backend->checksum_length)) {
-            /* Optimization allowed because exception response is
-               the smallest trame in modbus protocol (3) so always
-               raise a timeout error.
-               Temporary error before exception analyze. */
-            errno = EMBUNKEXC;
-        } else {
-            errno = ETIMEDOUT;
-            _error_print(ctx, "select");
-        }
+        errno = ETIMEDOUT;
+        _error_print(ctx, "select");
         return -1;
     }
 #endif
@@ -821,46 +802,57 @@ const modbus_backend_t _modbus_rtu_backend = {
     _modbus_rtu_connect,
     _modbus_rtu_close,
     _modbus_rtu_flush,
-    _modbus_rtu_listen,
-    _modbus_rtu_accept,
     _modbus_rtu_select,
     _modbus_rtu_filter_request
 };
 
 /* Allocate and initialize the modbus_t structure for RTU
    - device: "/dev/ttyS0"
-   - baud:   9600, 19200, 57600, 115200, etc
+     On Win32, it's necessary to prepend COM name with "\\.\" for COM number
+     greater than 9, eg. "\\\\.\\COM10". See
+     http://msdn.microsoft.com/en-us/library/aa365247(v=vs.85).aspx for details.
+   - baud: 9600, 19200, 57600, 115200, etc
    - parity: 'N' stands for None, 'E' for Even and 'O' for odd
    - data_bits: 5, 6, 7, 8
    - stop_bits: 1, 2
-   - slave: slave number of the caller
 */
 modbus_t* modbus_new_rtu(const char *device,
                          int baud, char parity, int data_bit,
-                         int stop_bit, int slave)
+                         int stop_bit)
 {
     modbus_t *ctx;
     modbus_rtu_t *ctx_rtu;
+    size_t dest_size;
+    size_t ret_size;
 
     ctx = (modbus_t *) malloc(sizeof(modbus_t));
     _modbus_init_common(ctx);
-    if (_modbus_set_slave(ctx, slave) == -1) {
+
+    ctx->backend = &_modbus_rtu_backend;
+    ctx->backend_data = (modbus_rtu_t *) malloc(sizeof(modbus_rtu_t));
+    ctx_rtu = (modbus_rtu_t *)ctx->backend_data;
+
+    dest_size = sizeof(ctx_rtu->device);
+    ret_size = strlcpy(ctx_rtu->device, device, dest_size);
+    if (ret_size == 0) {
+        fprintf(stderr, "The device string is empty\n");
+        modbus_free(ctx);
+        errno = EINVAL;
         return NULL;
     }
 
-    ctx->backend = &_modbus_rtu_backend;
+    if (ret_size >= dest_size) {
+        fprintf(stderr, "The device string has been truncated\n");
+        modbus_free(ctx);
+        errno = EINVAL;
+        return NULL;
+    }
 
-    ctx->backend_data = (modbus_rtu_t *) malloc(sizeof(modbus_rtu_t));
-    ctx_rtu = (modbus_rtu_t *)ctx->backend_data;
-#if defined(OpenBSD)
-    strlcpy(ctx_rtu->device, device, sizeof(ctx_rtu->device));
-#else
-    strcpy(ctx_rtu->device, device);
-#endif
     ctx_rtu->baud = baud;
     if (parity == 'N' || parity == 'E' || parity == 'O') {
         ctx_rtu->parity = parity;
     } else {
+        modbus_free(ctx);
         errno = EINVAL;
         return NULL;
     }

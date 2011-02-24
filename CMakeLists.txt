@@ -20,7 +20,6 @@ ENDIF(VERSION_SUFFIX)
 # check for Qt4
 SET(QT_MIN_VERSION "4.4.0")
 FIND_PACKAGE(Qt4 REQUIRED)
-SET(QT_QTGUI_INCLUDE_DIR "")
 INCLUDE(${QT_USE_FILE})
 
 
@@ -34,20 +33,20 @@ SET(CMAKE_CXX_FLAGS "-O2 -g -fno-exceptions -Wall ${CMAKE_CXX_FLAGS}")
 SET(qmodbus_SOURCES src/main.cpp 
     src/mainwindow.cpp 
     3rdparty/qextserialport/qextserialport.cpp 
-	3rdparty/libmodbus/modbus.c
-	3rdparty/libmodbus/modbus-data.c
-	3rdparty/libmodbus/modbus-rtu.c
-	3rdparty/libmodbus/modbus-tcp.c)
+	3rdparty/libmodbus/src/modbus.c
+	3rdparty/libmodbus/src/modbus-data.c
+	3rdparty/libmodbus/src/modbus-rtu.c
+	3rdparty/libmodbus/src/modbus-tcp.c)
 
 SET(qmodbus_INCLUDES src/mainwindow.h 
     3rdparty/qextserialport/qextserialport.h 
     3rdparty/qextserialport/qextserialenumerator.h 
-    3rdparty/libmodbus/modbus.h)
+    3rdparty/libmodbus/src/modbus.h)
 
 IF(WIN32)
 	SET(qmodbus_SOURCES ${qmodbus_SOURCES} 3rdparty/qextserialport/win_qextserialport.cpp 3rdparty/qextserialport/qextserialenumerator_win.cpp)
 	ADD_DEFINITIONS(-D_TTY_WIN_)
-	LINK_LIBRARIES(-lsetupapi -lwsock32)
+	LINK_LIBRARIES(-lsetupapi -lws2_32)
 	INSTALL(FILES ${QT_BINARY_DIR}/QtCore4.dll ${QT_BINARY_DIR}/QtGui4.dll ${QT_BINARY_DIR}/zlib1.dll DESTINATION .)
 	SET(WINRC "${CMAKE_BINARY_DIR}/qmodbusrc.obj")
 	ADD_CUSTOM_COMMAND(OUTPUT ${WINRC}
@@ -67,7 +66,7 @@ QT4_WRAP_CPP(qmodbus_MOC_out ${qmodbus_INCLUDES})
 QT4_WRAP_UI(qmodbus_UIC_out ${qmodbus_UI})
 QT4_ADD_RESOURCES(qmodbus_RCC_out data/qmodbus.qrc)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libmodbus ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/qextserialport ${CMAKE_BINARY_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libmodbus ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libmodbus/src ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/qextserialport ${CMAKE_BINARY_DIR})
 LINK_LIBRARIES(${QT_LIBRARIES})
 ADD_EXECUTABLE(qmodbus ${qmodbus_SOURCES} ${qmodbus_UIC_out} ${qmodbus_MOC_out} ${qmodbus_RCC_out} ${WINRC})
 

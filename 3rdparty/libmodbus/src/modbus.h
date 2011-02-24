@@ -18,36 +18,13 @@
 #ifndef _MODBUS_H_
 #define _MODBUS_H_
 
-#include <config.h>
-
-/* If win32 and no cygwin, suppose it's MinGW or any other native windows compiler. */
-#if defined(WIN32) && !defined(__CYGWIN__)
-#define NATIVE_WIN32
-#define MSG_NOSIGNAL 0
-#define ECONNRESET WSAECONNRESET
-#define ECONNREFUSED WSAECONNREFUSED
-#define ETIMEDOUT WSAETIMEDOUT
-#define ENOPROTOOPT WSAENOPROTOOPT
-#define SHUT_RDWR 2
-#include <winsock2.h>
-#endif /* win32 and no cygwin */
-
 /* Add this for macros that defined unix flavor */
 #if (defined(__unix__) || defined(unix)) && !defined(USG)
 #include <sys/param.h>
 #endif
+
 #include <stdint.h>
 #include <sys/types.h>
-#ifndef NATIVE_WIN32
-#include <termios.h>
-#if defined(OpenBSD) || (defined(__FreeBSD__) && __FreeBSD__ < 5)
-#include <netinet/in_systm.h>
-#endif
-#include <netinet/in.h>
-#include <netinet/ip.h>
-#include <netinet/tcp.h>
-#include <arpa/inet.h>
-#endif
 #include <sys/time.h>
 
 #include "modbus-version.h"
@@ -163,6 +140,8 @@ void modbus_set_timeout_begin(modbus_t *ctx, const struct timeval *timeout);
 void modbus_get_timeout_end(modbus_t *ctx, struct timeval *timeout);
 void modbus_set_timeout_end(modbus_t *ctx, const struct timeval *timeout);
 
+int modbus_get_header_length(modbus_t *ctx);
+
 int modbus_connect(modbus_t *ctx);
 void modbus_close(modbus_t *ctx);
 
@@ -190,13 +169,14 @@ modbus_mapping_t* modbus_mapping_new(int nb_coil_status, int nb_input_status,
                                      int nb_holding_registers, int nb_input_registers);
 void modbus_mapping_free(modbus_mapping_t *mb_mapping);
 
-void modbus_poll(modbus_t *ctx);
-
-int modbus_listen(modbus_t *ctx, int nb_connection);
-int modbus_accept(modbus_t *ctx, int *socket);
 int modbus_receive(modbus_t *ctx, int sockfd, uint8_t *req);
 int modbus_reply(modbus_t *ctx, const uint8_t *req,
                  int req_length, modbus_mapping_t *mb_mapping);
+int modbus_reply_exception(modbus_t *ctx, const uint8_t *req,
+                           unsigned int exception_code);
+
+void modbus_poll(modbus_t *ctx);
+
 
 /**
  * UTILS FUNCTIONS
@@ -204,6 +184,13 @@ int modbus_reply(modbus_t *ctx, const uint8_t *req,
 
 #define MODBUS_GET_HIGH_BYTE(data) ((data >> 8) & 0xFF)
 #define MODBUS_GET_LOW_BYTE(data) (data & 0xFF)
+#define MODBUS_GET_INT32_FROM_INT16(tab_int16, index) ((tab_int16[index] << 16) + tab_int16[index + 1])
+#define MODBUS_GET_INT16_FROM_INT8(tab_int8, index) ((tab_int8[index] << 8) + tab_int8[index + 1])
+#define MODBUS_SET_INT16_TO_INT8(tab_int8, index, value) \
+    do { \
+       tab_int8[index] = value >> 8; \
+       tab_int8[index + 1] = value & 0xFF; \
+    } while (0)
 
 void modbus_set_bits_from_byte(uint8_t *dest, int address, const uint8_t value);
 void modbus_set_bits_from_bytes(uint8_t *dest, int address, unsigned int nb_bits,
