@@ -1,7 +1,7 @@
 /*
  * mainwindow.h - header file for MainWindow class
  *
- * Copyright (c) 2009-2010 Tobias Doerffel / Electronic Design Chemnitz
+ * Copyright (c) 2009-2011 Tobias Doerffel / Electronic Design Chemnitz
  *
  * This file is part of QModBus - http://qmodbus.sourceforge.net
  *
@@ -39,7 +39,7 @@ public:
 	{
 		setupUi( this );
 		aboutTextLabel->setText(
-			aboutTextLabel->text().arg( "0.2.0" ) );
+			aboutTextLabel->text().arg( "0.2.1" ) );
 	}
 } ;
 
