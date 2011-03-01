@@ -82,12 +82,13 @@ ENDIF(WIN32)
 # add dist target
 #
 SET(TMP "qmodbus-${VERSION}")
+SET(S ${CMAKE_SOURCE_DIR})
 ADD_CUSTOM_TARGET(dist
                         COMMAND make clean
                         COMMAND rm -rf ${TMP}
                         COMMAND mkdir -p ${TMP}
-                        COMMAND cp AUTHORS build_mingw32 CMakeLists.txt qmodbus.pro COPYING INSTALL qmodbus.rc.in README TODO ${TMP}
-                        COMMAND cp -r 3rdparty cmake data forms src ${TMP}
+                        COMMAND cp ${S}/AUTHORS ${S}/build_mingw32 ${S}/CMakeLists.txt ${S}/qmodbus.pro ${S}/COPYING ${S}/INSTALL ${S}/qmodbus.rc.in ${S}/README ${S}/TODO ${TMP}
+                        COMMAND cp -r ${S}/3rdparty ${S}/cmake ${S}/data ${S}/forms ${S}/src ${TMP}
                         COMMAND rm -rf `find ${TMP} -name cmake_install.cmake` `find ${TMP} -name Makefile` `find ${TMP} -type d -name CMakeFiles` ${TMP}/CMakeCache.txt
                         COMMAND tar cjf qmodbus-${VERSION}.tar.bz2 ${TMP}
                         COMMAND rm -rf ${TMP})
