@@ -14,10 +14,10 @@ BEGIN
     //language ID = U.S. English, charset = Windows, Multilingual
     BEGIN
       VALUE "Comments",		"QModBus (http://qmodbus.sourceforge.net)\0"
-      VALUE "CompanyName",	"Electronic Design Chemnitz (EDC)\0"
+      VALUE "CompanyName",	"EDC Electronic Design Chemnitz GmbH\0"
       VALUE "FileDescription",	"QModBus\0"
       VALUE "FileVersion",	"@VERSION@\0"
-      VALUE "LegalCopyright",	"Copyright (c) 2009 Tobias Doerffel / Electronic Design Chemnitz\0"
+      VALUE "LegalCopyright",	"Copyright (c) 2009-2011 Tobias Doerffel / EDC Electronic Design Chemnitz GmbH\0"
       VALUE "OriginalFilename",	"qmodbus.exe\0"
       VALUE "ProductName",	"QModBus\0"
       VALUE "ProductVersion",	"@VERSION@\0"
