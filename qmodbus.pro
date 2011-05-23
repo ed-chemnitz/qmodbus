@@ -4,16 +4,16 @@ VERSION = 0.1.0
 SOURCES += src/main.cpp \
     src/mainwindow.cpp \
     3rdparty/qextserialport/qextserialport.cpp	\
-	3rdparty/libmodbus/modbus.c \
-	3rdparty/libmodbus/modbus-data.c \
-	3rdparty/libmodbus/modbus-rtu.c \
-	3rdparty/libmodbus/modbus-tcp.c
+	3rdparty/libmodbus/src/modbus.c \
+	3rdparty/libmodbus/src/modbus-data.c \
+	3rdparty/libmodbus/src/modbus-rtu.c \
+	3rdparty/libmodbus/src/modbus-tcp.c
 HEADERS += src/mainwindow.h \
     3rdparty/qextserialport/qextserialport.h \
     3rdparty/qextserialport/qextserialenumerator.h \
-    3rdparty/libmodbus/modbus.h
+    3rdparty/libmodbus/src/modbus.h
 
-INCLUDEPATH += 3rdparty/libmodbus 3rdparty/qextserialport
+INCLUDEPATH += 3rdparty/libmodbus 3rdparty/libmodbus/src 3rdparty/qextserialport
 
 unix:SOURCES += 3rdparty/qextserialport/posix_qextserialport.cpp	\
 		3rdparty/qextserialport/qextserialenumerator_unix.cpp
