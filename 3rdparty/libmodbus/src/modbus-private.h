@@ -45,9 +45,9 @@ MODBUS_BEGIN_DECLS
 
 #define _MODBUS_EXCEPTION_RSP_LENGTH  5
 
-/* Time out between messages in microsecond */
-#define _TIME_OUT_BEGIN_OF_MESSAGE    500000
-#define _TIME_OUT_END_OF_MESSAGE      500000
+/* Timeouts in microsecond (0.5 s) */
+#define _RESPONSE_TIMEOUT    500000
+#define _BYTE_TIMEOUT        500000
 
 /* Function codes */
 #define _FC_READ_COILS                0x01
@@ -90,6 +90,8 @@ typedef struct _modbus_backend {
     ssize_t (*recv) (modbus_t *ctx, uint8_t *rsp, int rsp_length);
     int (*check_integrity) (modbus_t *ctx, uint8_t *msg,
                             const int msg_length);
+    int (*pre_check_confirmation) (modbus_t *ctx, const uint8_t *req,
+                                   const uint8_t *rsp, int rsp_length);
     int (*connect) (modbus_t *ctx);
     void (*close) (modbus_t *ctx);
     int (*flush) (modbus_t *ctx);
@@ -104,8 +106,8 @@ struct _modbus {
     int s;
     int debug;
     int error_recovery;
-    struct timeval timeout_begin;
-    struct timeval timeout_end;
+    struct timeval response_timeout;
+    struct timeval byte_timeout;
 	uint16_t last_crc_expected;
 	uint16_t last_crc_received;
     const modbus_backend_t *backend;

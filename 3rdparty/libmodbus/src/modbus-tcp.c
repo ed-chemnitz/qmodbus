@@ -70,7 +70,7 @@ static int _modbus_tcp_init_win32(void)
 
     if (WSAStartup(MAKEWORD(2, 0), &wsaData) != 0) {
         fprintf(stderr, "WSAStartup() returned error code %d\n",
-                (int)GetLastError());
+                (unsigned int)GetLastError());
         errno = EIO;
         return -1;
     }
@@ -189,6 +189,22 @@ ssize_t _modbus_tcp_recv(modbus_t *ctx, uint8_t *rsp, int rsp_length) {
 int _modbus_tcp_check_integrity(modbus_t *ctx, uint8_t *msg, const int msg_length)
 {
     return msg_length;
+}
+
+int _modbus_tcp_pre_check_confirmation(modbus_t *ctx, const uint8_t *req,
+                                       const uint8_t *rsp, int rsp_length)
+{
+    /* Check TID */
+    if (req[0] != rsp[0] || req[1] != rsp[1]) {
+        if (ctx->debug) {
+            fprintf(stderr, "Invalid TID received 0x%X (not 0x%X)\n",
+                    (rsp[0] << 8) + rsp[1], (req[0] << 8) + req[1]);
+        }
+        errno = EMBBADDATA;
+        return -1;
+    } else {
+        return 0;
+    }
 }
 
 static int _modbus_tcp_set_ipv4_options(int s)
@@ -327,6 +343,7 @@ void _modbus_tcp_close(modbus_t *ctx)
 int _modbus_tcp_flush(modbus_t *ctx)
 {
     int rc;
+    int rc_sum = 0;
 
     do {
         /* Extract the garbage from the socket */
@@ -347,14 +364,17 @@ int _modbus_tcp_flush(modbus_t *ctx)
             return -1;
         }
 
-        rc = recv(ctx->s, devnull, MODBUS_TCP_MAX_ADU_LENGTH, 0);
-#endif
-        if (ctx->debug && rc != -1) {
-            printf("\n%d bytes flushed\n", rc);
+        if (rc == 1) {
+            /* There is data to flush */
+            rc = recv(ctx->s, devnull, MODBUS_TCP_MAX_ADU_LENGTH, 0);
         }
-    } while (rc > 0);
+#endif
+        if (rc > 0) {
+            rc_sum += rc;
+        }
+    } while (rc == MODBUS_TCP_MAX_ADU_LENGTH);
 
-    return rc;
+    return rc_sum;
 }
 
 /* Listens for any request from one or many modbus masters in TCP */
@@ -547,21 +567,12 @@ int _modbus_tcp_select(modbus_t *ctx, fd_set *rfds, struct timeval *tv, int leng
             FD_ZERO(rfds);
             FD_SET(ctx->s, rfds);
         } else {
-            _error_print(ctx, "select");
-            if (ctx->error_recovery && (errno == EBADF)) {
-                modbus_close(ctx);
-                modbus_connect(ctx);
-                errno = EBADF;
-                return -1;
-            } else {
-                return -1;
-            }
+            return -1;
         }
     }
 
     if (s_rc == 0) {
         errno = ETIMEDOUT;
-        _error_print(ctx, "select");
         return -1;
     }
 
@@ -586,6 +597,7 @@ const modbus_backend_t _modbus_tcp_backend = {
     _modbus_tcp_send,
     _modbus_tcp_recv,
     _modbus_tcp_check_integrity,
+    _modbus_tcp_pre_check_confirmation,
     _modbus_tcp_connect,
     _modbus_tcp_close,
     _modbus_tcp_flush,
@@ -607,6 +619,7 @@ const modbus_backend_t _modbus_tcp_pi_backend = {
     _modbus_tcp_send,
     _modbus_tcp_recv,
     _modbus_tcp_check_integrity,
+    _modbus_tcp_pre_check_confirmation,
     _modbus_tcp_pi_connect,
     _modbus_tcp_close,
     _modbus_tcp_flush,

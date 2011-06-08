@@ -134,15 +134,23 @@ typedef struct {
     uint16_t *tab_registers;
 } modbus_mapping_t;
 
+typedef enum
+{
+    MODBUS_ERROR_RECOVERY_NONE          = 0,
+    MODBUS_ERROR_RECOVERY_LINK          = (1<<1),
+    MODBUS_ERROR_RECOVERY_PROTOCOL      = (1<<2),
+} modbus_error_recovery_mode;
+
 int modbus_set_slave(modbus_t* ctx, int slave);
+int modbus_set_error_recovery(modbus_t *ctx, modbus_error_recovery_mode error_recovery);
+void modbus_set_socket(modbus_t *ctx, int socket);
+int modbus_get_socket(modbus_t *ctx);
 
-int modbus_set_error_recovery(modbus_t *ctx, int enabled);
+void modbus_get_response_timeout(modbus_t *ctx, struct timeval *timeout);
+void modbus_set_response_timeout(modbus_t *ctx, const struct timeval *timeout);
 
-void modbus_get_timeout_begin(modbus_t *ctx, struct timeval *timeout);
-void modbus_set_timeout_begin(modbus_t *ctx, const struct timeval *timeout);
-
-void modbus_get_timeout_end(modbus_t *ctx, struct timeval *timeout);
-void modbus_set_timeout_end(modbus_t *ctx, const struct timeval *timeout);
+void modbus_get_byte_timeout(modbus_t *ctx, struct timeval *timeout);
+void modbus_set_byte_timeout(modbus_t *ctx, const struct timeval *timeout);
 
 int modbus_get_header_length(modbus_t *ctx);
 
@@ -173,7 +181,13 @@ modbus_mapping_t* modbus_mapping_new(int nb_coil_status, int nb_input_status,
                                      int nb_holding_registers, int nb_input_registers);
 void modbus_mapping_free(modbus_mapping_t *mb_mapping);
 
-int modbus_receive(modbus_t *ctx, int sockfd, uint8_t *req);
+int modbus_send_raw_request(modbus_t *ctx, uint8_t *raw_req, int raw_req_length);
+
+int modbus_receive(modbus_t *ctx, uint8_t *req);
+int modbus_receive_from(modbus_t *ctx, int sockfd, uint8_t *req);
+
+int modbus_receive_confirmation(modbus_t *ctx, uint8_t *rsp);
+
 int modbus_reply(modbus_t *ctx, const uint8_t *req,
                  int req_length, modbus_mapping_t *mb_mapping);
 int modbus_reply_exception(modbus_t *ctx, const uint8_t *req,
@@ -186,14 +200,14 @@ void modbus_poll(modbus_t *ctx);
  * UTILS FUNCTIONS
  **/
 
-#define MODBUS_GET_HIGH_BYTE(data) ((data >> 8) & 0xFF)
-#define MODBUS_GET_LOW_BYTE(data) (data & 0xFF)
-#define MODBUS_GET_INT32_FROM_INT16(tab_int16, index) ((tab_int16[index] << 16) + tab_int16[index + 1])
-#define MODBUS_GET_INT16_FROM_INT8(tab_int8, index) ((tab_int8[index] << 8) + tab_int8[index + 1])
+#define MODBUS_GET_HIGH_BYTE(data) (((data) >> 8) & 0xFF)
+#define MODBUS_GET_LOW_BYTE(data) ((data) & 0xFF)
+#define MODBUS_GET_INT32_FROM_INT16(tab_int16, index) ((tab_int16[(index)] << 16) + tab_int16[(index) + 1])
+#define MODBUS_GET_INT16_FROM_INT8(tab_int8, index) ((tab_int8[(index)] << 8) + tab_int8[(index) + 1])
 #define MODBUS_SET_INT16_TO_INT8(tab_int8, index, value) \
     do { \
-       tab_int8[index] = value >> 8; \
-       tab_int8[index + 1] = value & 0xFF; \
+        tab_int8[(index)] = (value) >> 8;  \
+        tab_int8[(index) + 1] = (value) & 0xFF; \
     } while (0)
 
 void modbus_set_bits_from_byte(uint8_t *dest, int address, const uint8_t value);

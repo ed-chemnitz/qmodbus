@@ -30,6 +30,11 @@
 #include "modbus-rtu.h"
 #include "modbus-rtu-private.h"
 
+#if defined(HAVE_DECL_TIOCSRS485)
+#include <sys/ioctl.h>
+#include <linux/serial.h>
+#endif
+
 /* Table of CRC values for high-order byte */
 static const uint8_t table_crc_hi[] = {
     0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0,
@@ -193,10 +198,18 @@ static int win32_ser_select(struct win32_ser *ws, int max_len,
         return 1;
     }
 
-    /* Setup timeouts like select() would do */
-    msec = tv->tv_sec * 1000 + tv->tv_usec / 1000;
-    if (msec < 1)
-        msec = 1;
+    /* Setup timeouts like select() would do.
+       FIXME Please someone on Windows can look at this?
+       Does it possible to use WaitCommEvent?
+       When tv is NULL, MAXDWORD isn't infinite!
+     */
+    if (tv == NULL) {
+        msec = MAXDWORD;
+    } else {
+        msec = tv->tv_sec * 1000 + tv->tv_usec / 1000;
+        if (msec < 1)
+            msec = 1;
+    }
 
     comm_to.ReadIntervalTimeout = msec;
     comm_to.ReadTotalTimeoutMultiplier = 0;
@@ -287,7 +300,7 @@ int _modbus_rtu_check_integrity(modbus_t *ctx, uint8_t *msg,
             fprintf(stderr, "ERROR CRC received %0X != CRC calculated %0X\n",
                     crc_received, crc_calculated);
         }
-        if (ctx->error_recovery) {
+        if (ctx->error_recovery & MODBUS_ERROR_RECOVERY_PROTOCOL) {
             _modbus_rtu_flush(ctx);
         }
         errno = EMBBADCRC;
@@ -687,10 +700,54 @@ static int _modbus_rtu_connect(modbus_t *ctx)
     if (tcsetattr(ctx->s, TCSANOW, &tios) < 0) {
         return -1;
     }
-#endif
 
+    /* The RS232 mode has been set by default */
+    ctx_rtu->serial_mode = MODBUS_RTU_RS232;
+#endif
     return 0;
 }
+
+#if defined(HAVE_DECL_TIOCSRS485)
+int modbus_rtu_set_serial_mode(modbus_t *ctx, int mode)
+{
+    if (ctx->backend->backend_type == _MODBUS_BACKEND_TYPE_RTU) {
+        modbus_rtu_t *ctx_rtu = ctx->backend_data;
+        struct serial_rs485 rs485conf;
+        memset(&rs485conf, 0x0, sizeof(struct serial_rs485));
+
+        if (mode == MODBUS_RTU_RS485) {
+            rs485conf.flags = SER_RS485_ENABLED;
+            if (ioctl(ctx->s, TIOCSRS485, &rs485conf) < 0) {
+                return -1;
+            }
+
+            ctx_rtu->serial_mode |= MODBUS_RTU_RS485;
+            return 0;
+        } else if (mode == MODBUS_RTU_RS232) {
+            if (ioctl(ctx->s, TIOCSRS485, &rs485conf) < 0) {
+                return -1;
+            }
+
+            ctx_rtu->serial_mode = MODBUS_RTU_RS232;
+            return 0;
+        }
+    }
+
+    /* Wrong backend and invalid mode specified */
+    errno = EINVAL;
+    return -1;
+}
+
+int modbus_rtu_get_serial_mode(modbus_t *ctx) {
+    if (ctx->backend->backend_type == _MODBUS_BACKEND_TYPE_RTU) {
+        modbus_rtu_t *ctx_rtu = ctx->backend_data;
+        return ctx_rtu->serial_mode;
+    } else {
+        errno = EINVAL;
+        return -1;
+    }
+}
+#endif
 
 void _modbus_rtu_close(modbus_t *ctx)
 {
@@ -736,15 +793,7 @@ int _modbus_rtu_select(modbus_t *ctx, fd_set *rfds,
     }
 
     if (s_rc < 0) {
-        _error_print(ctx, "select");
-        if (ctx->error_recovery && (errno == EBADF)) {
-            modbus_close(ctx);
-            modbus_connect(ctx);
-            errno = EBADF;
-            return -1;
-        } else {
-            return -1;
-        }
+        return -1;
     }
 #else
     while ((s_rc = select(ctx->s+1, rfds, NULL, NULL, tv)) == -1) {
@@ -756,22 +805,13 @@ int _modbus_rtu_select(modbus_t *ctx, fd_set *rfds,
             FD_ZERO(rfds);
             FD_SET(ctx->s, rfds);
         } else {
-            _error_print(ctx, "select");
-            if (ctx->error_recovery && (errno == EBADF)) {
-                modbus_close(ctx);
-                modbus_connect(ctx);
-                errno = EBADF;
-                return -1;
-            } else {
-                return -1;
-            }
+            return -1;
         }
     }
 
     if (s_rc == 0) {
         /* Timeout */
         errno = ETIMEDOUT;
-        _error_print(ctx, "select");
         return -1;
     }
 #endif
@@ -807,6 +847,7 @@ const modbus_backend_t _modbus_rtu_backend = {
     _modbus_rtu_send,
     _modbus_rtu_recv,
     _modbus_rtu_check_integrity,
+    NULL,
     _modbus_rtu_connect,
     _modbus_rtu_close,
     _modbus_rtu_flush,
