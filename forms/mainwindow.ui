@@ -584,7 +584,14 @@
     </property>
     <addaction name="actionAbout_QModBus"/>
    </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>Tools</string>
+    </property>
+    <addaction name="actionBatchProcessing"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
   </widget>
   <action name="actionQuit">
@@ -595,6 +602,11 @@
   <action name="actionAbout_QModBus">
    <property name="text">
     <string>About QModBus</string>
+   </property>
+  </action>
+  <action name="actionBatchProcessing">
+   <property name="text">
+    <string>Batch processing</string>
    </property>
   </action>
  </widget>
@@ -635,5 +647,24 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionBatchProcessing</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindowClass</receiver>
+   <slot>openBatchProcessor()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>444</x>
+     <y>297</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
+ <slots>
+  <slot>openBatchProcessor()</slot>
+ </slots>
 </ui>

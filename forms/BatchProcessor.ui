@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>BatchProcessor</class>
+ <widget class="QDialog" name="BatchProcessor">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>515</width>
+    <height>173</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>QModBus Batch Processor</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QGridLayout" name="gridLayout">
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Interval (in seconds)</string>
+       </property>
+       <property name="buddy">
+        <cstring>intervalSpinBox</cstring>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QSpinBox" name="intervalSpinBox">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="2" colspan="2">
+      <spacer name="horizontalSpacer_5">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_5">
+       <property name="text">
+        <string>Function code</string>
+       </property>
+       <property name="buddy">
+        <cstring>functionCode</cstring>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1" colspan="4">
+      <widget class="QComboBox" name="functionCode">
+       <item>
+        <property name="text">
+         <string>Read Coils (0x01)</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Read Discrete Inputs (0x02)</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Read Holding Registers (0x03)</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Read Input Registers (0x04)</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Write Single Coil (0x05)</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Write Single Register (0x06)</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Write Multiple Coils (0x0f)</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Write Multiple Registers (0x10)</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Output file</string>
+       </property>
+       <property name="buddy">
+        <cstring>outputFileEdit</cstring>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1" colspan="3">
+      <widget class="QLineEdit" name="outputFileEdit"/>
+     </item>
+     <item row="4" column="4">
+      <widget class="QToolButton" name="openOutputFileButton">
+       <property name="text">
+        <string>...</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1" colspan="3">
+      <widget class="QLineEdit" name="slaveEdit"/>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>IDs &amp;&amp; registers</string>
+       </property>
+       <property name="buddy">
+        <cstring>slaveEdit</cstring>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="startButton">
+       <property name="text">
+        <string>Start</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="stopButton">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Stop</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_8">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="closeButton">
+       <property name="text">
+        <string>Close</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <tabstops>
+  <tabstop>slaveEdit</tabstop>
+  <tabstop>intervalSpinBox</tabstop>
+  <tabstop>functionCode</tabstop>
+  <tabstop>outputFileEdit</tabstop>
+  <tabstop>openOutputFileButton</tabstop>
+  <tabstop>startButton</tabstop>
+  <tabstop>stopButton</tabstop>
+  <tabstop>closeButton</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>closeButton</sender>
+   <signal>clicked()</signal>
+   <receiver>BatchProcessor</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>402</x>
+     <y>160</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>208</x>
+     <y>99</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>openOutputFileButton</sender>
+   <signal>clicked()</signal>
+   <receiver>BatchProcessor</receiver>
+   <slot>browseOutputFile()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>492</x>
+     <y>113</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>505</x>
+     <y>24</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>startButton</sender>
+   <signal>clicked()</signal>
+   <receiver>BatchProcessor</receiver>
+   <slot>start()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>138</x>
+     <y>147</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>67</x>
+     <y>144</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>stopButton</sender>
+   <signal>clicked()</signal>
+   <receiver>BatchProcessor</receiver>
+   <slot>stop()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>212</x>
+     <y>152</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>267</x>
+     <y>145</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>start()</slot>
+  <slot>stop()</slot>
+  <slot>browseOutputFile()</slot>
+ </slots>
+</ui>

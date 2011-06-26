@@ -76,6 +76,7 @@ private slots:
 	void sendModbusRequest( void );
 	void resetStatus( void );
 	void pollForDataOnBus( void );
+	void openBatchProcessor();
 	void aboutQModBus( void );
 
 

@@ -30,17 +30,19 @@ CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/qmodbus.rc.in ${CMAKE_BINARY_DIR}/qmodbus.rc)
 SET(CMAKE_C_FLAGS "-O2 -g -Wall ${CMAKE_C_FLAGS}")
 SET(CMAKE_CXX_FLAGS "-O2 -g -fno-exceptions -Wall ${CMAKE_CXX_FLAGS}")
 
-SET(qmodbus_SOURCES src/main.cpp 
-    src/mainwindow.cpp 
-    3rdparty/qextserialport/qextserialport.cpp 
+SET(qmodbus_SOURCES src/main.cpp
+    src/mainwindow.cpp
+    src/BatchProcessor.cpp
+    3rdparty/qextserialport/qextserialport.cpp
 	3rdparty/libmodbus/src/modbus.c
 	3rdparty/libmodbus/src/modbus-data.c
 	3rdparty/libmodbus/src/modbus-rtu.c
 	3rdparty/libmodbus/src/modbus-tcp.c)
 
-SET(qmodbus_INCLUDES src/mainwindow.h 
-    3rdparty/qextserialport/qextserialport.h 
-    3rdparty/qextserialport/qextserialenumerator.h 
+SET(qmodbus_INCLUDES src/mainwindow.h
+    src/BatchProcessor.h
+    3rdparty/qextserialport/qextserialport.h
+    3rdparty/qextserialport/qextserialenumerator.h
     3rdparty/libmodbus/src/modbus.h)
 
 IF(WIN32)
@@ -60,7 +62,10 @@ ELSE(WIN32)
 	ADD_DEFINITIONS(-D_TTY_POSIX_)
 ENDIF(WIN32)
 
-SET(qmodbus_UI forms/mainwindow.ui forms/about.ui)
+SET(qmodbus_UI forms/mainwindow.ui
+					forms/about.ui
+					forms/BatchProcessor.ui
+				)
 
 QT4_WRAP_CPP(qmodbus_MOC_out ${qmodbus_INCLUDES})
 QT4_WRAP_UI(qmodbus_UIC_out ${qmodbus_UI})

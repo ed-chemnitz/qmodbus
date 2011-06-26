@@ -31,6 +31,7 @@
 #include <errno.h>
 
 #include "mainwindow.h"
+#include "BatchProcessor.h"
 #include "modbus.h"
 #include "modbus-private.h"
 #include "qextserialenumerator.h"
@@ -590,6 +591,14 @@ void MainWindow::pollForDataOnBus( void )
 	{
 		modbus_poll( m_modbus );
 	}
+}
+
+
+
+
+void MainWindow::openBatchProcessor()
+{
+	BatchProcessor( this, m_modbus ).exec();
 }
 
 
