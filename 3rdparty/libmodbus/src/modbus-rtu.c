@@ -1,18 +1,19 @@
 /*
- * Copyright © 2001-2010 Stéphane Raimbault <stephane.raimbault@gmail.com>
+ * Copyright © 2001-2011 Stéphane Raimbault <stephane.raimbault@gmail.com>
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <stdio.h>
@@ -707,10 +708,10 @@ static int _modbus_rtu_connect(modbus_t *ctx)
     return 0;
 }
 
-#if defined(HAVE_DECL_TIOCSRS485)
 int modbus_rtu_set_serial_mode(modbus_t *ctx, int mode)
 {
     if (ctx->backend->backend_type == _MODBUS_BACKEND_TYPE_RTU) {
+#if defined(HAVE_DECL_TIOCSRS485)
         modbus_rtu_t *ctx_rtu = ctx->backend_data;
         struct serial_rs485 rs485conf;
         memset(&rs485conf, 0x0, sizeof(struct serial_rs485));
@@ -731,6 +732,13 @@ int modbus_rtu_set_serial_mode(modbus_t *ctx, int mode)
             ctx_rtu->serial_mode = MODBUS_RTU_RS232;
             return 0;
         }
+#else
+        if (ctx->debug) {
+            fprintf(stderr, "This function isn't supported on your platform\n");
+        }
+        errno = ENOTSUP;
+        return -1;
+#endif
     }
 
     /* Wrong backend and invalid mode specified */
@@ -747,7 +755,6 @@ int modbus_rtu_get_serial_mode(modbus_t *ctx) {
         return -1;
     }
 }
-#endif
 
 void _modbus_rtu_close(modbus_t *ctx)
 {
