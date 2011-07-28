@@ -269,13 +269,13 @@ int main(int argc, char *argv[])
     /* Write registers to zero from tab_rp_registers and store read registers
        into tab_rp_registers. So the read registers must set to 0, except the
        first one because there is an offset of 1 register on write. */
-    rc = modbus_read_and_write_registers(ctx,
-                                         UT_REGISTERS_ADDRESS, UT_REGISTERS_NB,
+    rc = modbus_write_and_read_registers(ctx,
+                                         UT_REGISTERS_ADDRESS + 1, UT_REGISTERS_NB - 1,
                                          tab_rp_registers,
-                                         UT_REGISTERS_ADDRESS + 1,
-                                         UT_REGISTERS_NB - 1,
+                                         UT_REGISTERS_ADDRESS,
+                                         UT_REGISTERS_NB,
                                          tab_rp_registers);
-    printf("4/5 modbus_read_and_write_registers: ");
+    printf("4/5 modbus_write_and_read_registers: ");
     if (rc != UT_REGISTERS_NB) {
         printf("FAILED (nb points %d != %d)\n", rc, UT_REGISTERS_NB);
         goto close;
@@ -562,12 +562,29 @@ int main(int argc, char *argv[])
         goto close;
     }
 
-    if (((use_backend == RTU) && (tab_rp_bits[0] == SERVER_ID))
-        || tab_rp_bits[0] == 0xFF) {
-        printf("OK\n");
+    /* Slave ID is an arbitraty number for libmodbus */
+    if (rc > 0) {
+        printf("OK Slave ID is %d\n", tab_rp_bits[0]);
     } else {
         printf("FAILED\n");
         goto close;
+    }
+
+    /* Run status indicator */
+    if (rc > 1 && tab_rp_bits[1] == 0xFF) {
+        printf("OK Run Status Indicator is %s\n", tab_rp_bits[1] ? "ON" : "OFF");
+    } else {
+        printf("FAILED\n");
+        goto close;
+    }
+
+    /* Print additional data as string */
+    if (rc > 2) {
+        printf("Additional data: ");
+        for (i=2; i < rc; i++) {
+            printf("%c", tab_rp_bits[i]);
+        }
+        printf("\n");
     }
 
     /* Save original timeout */

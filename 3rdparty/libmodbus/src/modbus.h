@@ -173,9 +173,9 @@ int modbus_write_bit(modbus_t *ctx, int coil_addr, int status);
 int modbus_write_register(modbus_t *ctx, int reg_addr, int value);
 int modbus_write_bits(modbus_t *ctx, int addr, int nb, const uint8_t *data);
 int modbus_write_registers(modbus_t *ctx, int addr, int nb, const uint16_t *data);
-int modbus_read_and_write_registers(modbus_t *ctx, int read_addr,
-                                    int read_nb, uint16_t *dest, int write_addr,
-                                    int write_nb, const uint16_t *data);
+int modbus_write_and_read_registers(modbus_t *ctx, int write_addr, int write_nb,
+                                    const uint16_t *src, int read_addr, int read_nb,
+                                    uint16_t *dest);
 int modbus_report_slave_id(modbus_t *ctx, uint8_t *dest);
 
 modbus_mapping_t* modbus_mapping_new(int nb_coil_status, int nb_input_status,
@@ -211,10 +211,10 @@ void modbus_poll(modbus_t *ctx);
         tab_int8[(index) + 1] = (value) & 0xFF; \
     } while (0)
 
-void modbus_set_bits_from_byte(uint8_t *dest, int address, const uint8_t value);
-void modbus_set_bits_from_bytes(uint8_t *dest, int address, unsigned int nb_bits,
+void modbus_set_bits_from_byte(uint8_t *dest, int index, const uint8_t value);
+void modbus_set_bits_from_bytes(uint8_t *dest, int index, unsigned int nb_bits,
                                 const uint8_t *tab_byte);
-uint8_t modbus_get_byte_from_bits(const uint8_t *src, int address, unsigned int nb_bits);
+uint8_t modbus_get_byte_from_bits(const uint8_t *src, int index, unsigned int nb_bits);
 float modbus_get_float(const uint16_t *src);
 void modbus_set_float(float f, uint16_t *dest);
 

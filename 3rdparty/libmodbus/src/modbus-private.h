@@ -40,11 +40,11 @@ MODBUS_BEGIN_DECLS
  * - HEADER_LENGTH_TCP (7) + function (1) + address (2) + number (2)
  * - HEADER_LENGTH_RTU (1) + function (1) + address (2) + number (2) + CRC (2)
  */
-#define _MIN_REQ_LENGTH           12
+#define _MIN_REQ_LENGTH 12
 
-#define _REPORT_SLAVE_ID_LENGTH   75
+#define _REPORT_SLAVE_ID 180
 
-#define _MODBUS_EXCEPTION_RSP_LENGTH  5
+#define _MODBUS_EXCEPTION_RSP_LENGTH 5
 
 /* Timeouts in microsecond (0.5 s) */
 #define _RESPONSE_TIMEOUT    500000
@@ -61,7 +61,7 @@ MODBUS_BEGIN_DECLS
 #define _FC_WRITE_MULTIPLE_COILS      0x0F
 #define _FC_WRITE_MULTIPLE_REGISTERS  0x10
 #define _FC_REPORT_SLAVE_ID           0x11
-#define _FC_READ_AND_WRITE_REGISTERS  0x17
+#define _FC_WRITE_AND_READ_REGISTERS  0x17
 
 typedef enum {
     _MODBUS_BACKEND_TYPE_RTU=0,

@@ -9,7 +9,7 @@ modbus_write_registers - write many registers
 
 SYNOPSIS
 --------
-*int modbus_write_registers(modbus_t *'ctx', int 'addr', int 'nb', const uint16_t *'src')*
+*int modbus_write_registers(modbus_t *'ctx', int 'addr', int 'nb', const uint16_t *'src');*
 
 
 DESCRIPTION
@@ -29,8 +29,8 @@ registers if successful. Otherwise it shall return -1 and set errno.
 
 SEE ALSO
 --------
-linkmb:modbus_read_register[3]
 linkmb:modbus_write_register[3]
+linkmb:modbus_read_registers[3]
 
 
 AUTHORS

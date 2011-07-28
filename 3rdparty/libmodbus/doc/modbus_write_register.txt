@@ -9,7 +9,7 @@ modbus_write_register - write a single register
 
 SYNOPSIS
 --------
-*int modbus_write_register(modbus_t *'ctx', int 'addr', int 'value')*
+*int modbus_write_register(modbus_t *'ctx', int 'addr', int 'value');*
 
 
 DESCRIPTION
@@ -28,7 +28,7 @@ it shall return -1 and set errno.
 
 SEE ALSO
 --------
-linkmb:modbus_read_register[3]
+linkmb:modbus_read_registers[3]
 linkmb:modbus_write_registers[3]
 
 
