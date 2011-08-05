@@ -573,7 +573,7 @@ static int check_confirmation(modbus_t *ctx, uint8_t *req,
 			case _FC_READ_DISCRETE_INPUTS:
 				num_items = rsp_nb_value*8;
 				break;
-			case _FC_READ_AND_WRITE_REGISTERS:
+			case _FC_WRITE_AND_READ_REGISTERS:
 			case _FC_READ_HOLDING_REGISTERS:
 			case _FC_READ_INPUT_REGISTERS:
 				num_items = rsp_nb_value/2;
