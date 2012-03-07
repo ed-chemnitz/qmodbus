@@ -1,3 +1,9 @@
+libmodbus 3.1.0 (2011-XX-XX)
+============================
+
+- RTS flow control with modbus_rtu_set_rts and modbus_rtu_get_rts
+  functions by Torello Querci <tquerci@gmail.com> and Stéphane Raimbault.
+
 libmodbus 3.0.1 (2011-07-18)
 ============================
 

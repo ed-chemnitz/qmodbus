@@ -37,6 +37,10 @@
 
 #define _MODBUS_RTU_CHECKSUM_LENGTH    2
 
+/* Time waited beetween the RTS switch before transmit data or after transmit
+   data before to read */
+#define _MODBUS_RTU_TIME_BETWEEN_RTS_SWITCH 10000
+
 #if defined(_WIN32)
 #define ENOTSUP WSAEOPNOTSUPP
 
@@ -81,6 +85,11 @@ typedef struct _modbus_rtu {
 #if HAVE_DECL_TIOCSRS485
     int serial_mode;
 #endif
+#if HAVE_DECL_TIOCM_RTS
+    int rts;
+#endif
+    /* To handle many slaves on the same link */
+    int confirmation_to_ignore;
 } modbus_rtu_t;
 
 #endif /* _MODBUS_RTU_PRIVATE_H_ */

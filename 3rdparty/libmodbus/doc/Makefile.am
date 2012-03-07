@@ -26,6 +26,8 @@ MAN3 = \
         modbus_report_slave_id.3 \
         modbus_rtu_get_serial_mode.3 \
         modbus_rtu_set_serial_mode.3 \
+        modbus_rtu_get_rts.3 \
+        modbus_rtu_set_rts.3 \
         modbus_send_raw_request.3 \
         modbus_set_bits_from_bytes.3 \
         modbus_set_bits_from_byte.3 \
@@ -37,6 +39,7 @@ MAN3 = \
         modbus_set_slave.3 \
         modbus_set_socket.3 \
         modbus_strerror.3 \
+        modbus_tcp_listen.3 \
         modbus_write_and_read_registers.3 \
         modbus_write_bits.3 \
         modbus_write_bit.3 \

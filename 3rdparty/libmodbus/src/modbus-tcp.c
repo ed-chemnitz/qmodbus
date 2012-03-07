@@ -16,6 +16,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+/* For accept4 when available */
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -69,7 +71,7 @@ static int _modbus_tcp_init_win32(void)
     /* Initialise Windows Socket API */
     WSADATA wsaData;
 
-    if (WSAStartup(MAKEWORD(2, 0), &wsaData) != 0) {
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         fprintf(stderr, "WSAStartup() returned error code %d\n",
                 (unsigned int)GetLastError());
         errno = EIO;
@@ -101,21 +103,15 @@ int _modbus_tcp_build_request_basis(modbus_t *ctx, int function,
                                     int addr, int nb,
                                     uint8_t *req)
 {
+    modbus_tcp_t *ctx_tcp = ctx->backend_data;
 
-    /* Extract from MODBUS Messaging on TCP/IP Implementation Guide V1.0b
-       (page 23/46):
-       The transaction identifier is used to associate the future response
-       with the request. So, at a time, on a TCP connection, this identifier
-       must be unique. */
-    static uint16_t t_id = 0;
-
-    /* Transaction ID */
-    if (t_id < UINT16_MAX)
-        t_id++;
+    /* Increase transaction ID */
+    if (ctx_tcp->t_id < UINT16_MAX)
+        ctx_tcp->t_id++;
     else
-        t_id = 0;
-    req[0] = t_id >> 8;
-    req[1] = t_id & 0x00ff;
+        ctx_tcp->t_id = 0;
+    req[0] = ctx_tcp->t_id >> 8;
+    req[1] = ctx_tcp->t_id & 0x00ff;
 
     /* Protocol Modbus */
     req[2] = 0;
@@ -183,6 +179,10 @@ ssize_t _modbus_tcp_send(modbus_t *ctx, const uint8_t *req, int req_length)
     return send(ctx->s, (const char*)req, req_length, MSG_NOSIGNAL);
 }
 
+int _modbus_tcp_receive(modbus_t *ctx, uint8_t *req) {
+    return _modbus_receive_msg(ctx, req, MSG_INDICATION);
+}
+
 ssize_t _modbus_tcp_recv(modbus_t *ctx, uint8_t *rsp, int rsp_length) {
     return recv(ctx->s, (char *)rsp, rsp_length, 0);
 }
@@ -239,12 +239,46 @@ static int _modbus_tcp_set_ipv4_options(int s)
     return 0;
 }
 
+static int _connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen,
+                    struct timeval *tv)
+{
+    int rc;
+
+    rc = connect(sockfd, addr, addrlen);
+    if (rc == -1 && errno == EINPROGRESS) {
+        fd_set wset;
+        int optval;
+        socklen_t optlen = sizeof(optval);
+
+        /* Wait to be available in writing */
+        FD_ZERO(&wset);
+        FD_SET(sockfd, &wset);
+        rc = select(sockfd + 1, NULL, &wset, NULL, tv);
+        if (rc <= 0) {
+            /* Timeout or fail */
+            return -1;
+        }
+
+        /* The connection is established if SO_ERROR and optval are set to 0 */
+        rc = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, (void *)&optval, &optlen);
+        if (rc == 0 && optval == 0) {
+            return 0;
+        } else {
+            errno = ECONNREFUSED;
+            return -1;
+        }
+    }
+    return rc;
+}
+
 /* Establishes a modbus TCP connection with a Modbus server. */
 static int _modbus_tcp_connect(modbus_t *ctx)
 {
     int rc;
+    /* Specialized version of sockaddr for Internet socket address (same size) */
     struct sockaddr_in addr;
     modbus_tcp_t *ctx_tcp = ctx->backend_data;
+    int flags = SOCK_STREAM;
 
 #ifdef OS_WIN32
     if (_modbus_tcp_init_win32() == -1) {
@@ -252,7 +286,15 @@ static int _modbus_tcp_connect(modbus_t *ctx)
     }
 #endif
 
-    ctx->s = socket(PF_INET, SOCK_STREAM, 0);
+#ifdef SOCK_CLOEXEC
+    flags |= SOCK_CLOEXEC;
+#endif
+
+#ifdef SOCK_NONBLOCK
+    flags |= SOCK_NONBLOCK;
+#endif
+
+    ctx->s = socket(PF_INET, flags, 0);
     if (ctx->s == -1) {
         return -1;
     }
@@ -270,8 +312,7 @@ static int _modbus_tcp_connect(modbus_t *ctx)
     addr.sin_family = AF_INET;
     addr.sin_port = htons(ctx_tcp->port);
     addr.sin_addr.s_addr = inet_addr(ctx_tcp->ip);
-    rc = connect(ctx->s, (struct sockaddr *)&addr,
-                 sizeof(struct sockaddr_in));
+    rc = _connect(ctx->s, (struct sockaddr *)&addr, sizeof(addr), &ctx->response_timeout);
     if (rc == -1) {
         close(ctx->s);
         return -1;
@@ -302,21 +343,34 @@ static int _modbus_tcp_pi_connect(modbus_t *ctx)
     ai_list = NULL;
     rc = getaddrinfo(ctx_tcp_pi->node, ctx_tcp_pi->service,
                      &ai_hints, &ai_list);
-    if (rc != 0)
-        return rc;
+    if (rc != 0) {
+        if (ctx->debug) {
+            printf("Error returned by getaddrinfo: %d\n", rc);
+        }
+        return -1;
+    }
 
     for (ai_ptr = ai_list; ai_ptr != NULL; ai_ptr = ai_ptr->ai_next) {
+        int flags = ai_ptr->ai_socktype;
         int s;
 
-        s = socket(ai_ptr->ai_family, ai_ptr->ai_socktype, ai_ptr->ai_protocol);
+#ifdef SOCK_CLOEXEC
+        flags |= SOCK_CLOEXEC;
+#endif
+
+#ifdef SOCK_NONBLOCK
+        flags |= SOCK_NONBLOCK;
+#endif
+
+        s = socket(ai_ptr->ai_family, flags, ai_ptr->ai_protocol);
         if (s < 0)
             continue;
 
         if (ai_ptr->ai_family == AF_INET)
             _modbus_tcp_set_ipv4_options(s);
 
-        rc = connect(s, ai_ptr->ai_addr, ai_ptr->ai_addrlen);
-        if (rc != 0) {
+        rc = _connect(s, ai_ptr->ai_addr, ai_ptr->ai_addrlen, &ctx->response_timeout);
+        if (rc == -1) {
             close(s);
             continue;
         }
@@ -353,14 +407,14 @@ int _modbus_tcp_flush(modbus_t *ctx)
         rc = recv(ctx->s, devnull, MODBUS_TCP_MAX_ADU_LENGTH, MSG_DONTWAIT);
 #else
         /* On Win32, it's a bit more complicated to not wait */
-        fd_set rfds;
+        fd_set rset;
         struct timeval tv;
 
         tv.tv_sec = 0;
         tv.tv_usec = 0;
-        FD_ZERO(&rfds);
-        FD_SET(ctx->s, &rfds);
-        rc = select(ctx->s+1, &rfds, NULL, NULL, &tv);
+        FD_ZERO(&rset);
+        FD_SET(ctx->s, &rset);
+        rc = select(ctx->s+1, &rset, NULL, NULL, &tv);
         if (rc == -1) {
             return -1;
         }
@@ -522,7 +576,13 @@ int modbus_tcp_accept(modbus_t *ctx, int *socket)
     socklen_t addrlen;
 
     addrlen = sizeof(addr);
+#ifdef HAVE_ACCEPT4
+    /* Inherit socket flags and use accept4 call */
+    ctx->s = accept4(*socket, (struct sockaddr *)&addr, &addrlen, SOCK_CLOEXEC);
+#else
     ctx->s = accept(*socket, (struct sockaddr *)&addr, &addrlen);
+#endif
+
     if (ctx->s == -1) {
         close(*socket);
         *socket = 0;
@@ -550,23 +610,23 @@ int modbus_tcp_pi_accept(modbus_t *ctx, int *socket)
     }
 
     if (ctx->debug) {
-        printf("The client connection is accepted.");
+        printf("The client connection is accepted.\n");
     }
 
     return ctx->s;
 }
 
-int _modbus_tcp_select(modbus_t *ctx, fd_set *rfds, struct timeval *tv, int length_to_read)
+int _modbus_tcp_select(modbus_t *ctx, fd_set *rset, struct timeval *tv, int length_to_read)
 {
     int s_rc;
-    while ((s_rc = select(ctx->s+1, rfds, NULL, NULL, tv)) == -1) {
+    while ((s_rc = select(ctx->s+1, rset, NULL, NULL, tv)) == -1) {
         if (errno == EINTR) {
             if (ctx->debug) {
                 fprintf(stderr, "A non blocked signal was caught\n");
             }
             /* Necessary after an error */
-            FD_ZERO(rfds);
-            FD_SET(ctx->s, rfds);
+            FD_ZERO(rset);
+            FD_SET(ctx->s, rset);
         } else {
             return -1;
         }
@@ -580,11 +640,6 @@ int _modbus_tcp_select(modbus_t *ctx, fd_set *rfds, struct timeval *tv, int leng
     return s_rc;
 }
 
-int _modbus_tcp_filter_request(modbus_t *ctx, int slave)
-{
-    return 0;
-}
-
 const modbus_backend_t _modbus_tcp_backend = {
     _MODBUS_BACKEND_TYPE_TCP,
     _MODBUS_TCP_HEADER_LENGTH,
@@ -596,14 +651,14 @@ const modbus_backend_t _modbus_tcp_backend = {
     _modbus_tcp_prepare_response_tid,
     _modbus_tcp_send_msg_pre,
     _modbus_tcp_send,
+    _modbus_tcp_receive,
     _modbus_tcp_recv,
     _modbus_tcp_check_integrity,
     _modbus_tcp_pre_check_confirmation,
     _modbus_tcp_connect,
     _modbus_tcp_close,
     _modbus_tcp_flush,
-    _modbus_tcp_select,
-    _modbus_tcp_filter_request
+    _modbus_tcp_select
 };
 
 
@@ -618,14 +673,14 @@ const modbus_backend_t _modbus_tcp_pi_backend = {
     _modbus_tcp_prepare_response_tid,
     _modbus_tcp_send_msg_pre,
     _modbus_tcp_send,
+    _modbus_tcp_receive,
     _modbus_tcp_recv,
     _modbus_tcp_check_integrity,
     _modbus_tcp_pre_check_confirmation,
     _modbus_tcp_pi_connect,
     _modbus_tcp_close,
     _modbus_tcp_flush,
-    _modbus_tcp_select,
-    _modbus_tcp_filter_request
+    _modbus_tcp_select
 };
 
 modbus_t* modbus_new_tcp(const char *ip, int port)
@@ -676,6 +731,7 @@ modbus_t* modbus_new_tcp(const char *ip, int port)
     }
 
     ctx_tcp->port = port;
+    ctx_tcp->t_id = 0;
 
     return ctx;
 }
@@ -730,6 +786,8 @@ modbus_t* modbus_new_tcp_pi(const char *node, const char *service)
         errno = EINVAL;
         return NULL;
     }
+
+    ctx_tcp_pi->t_id = 0;
 
     return ctx;
 }

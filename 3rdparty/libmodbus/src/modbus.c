@@ -26,6 +26,9 @@
 #include <errno.h>
 #include <limits.h>
 #include <time.h>
+#ifndef _MSC_VER
+#include <unistd.h>
+#endif
 
 #include <config.h>
 
@@ -80,6 +83,8 @@ const char *modbus_strerror(int errnum) {
         return "Invalid exception code";
     case EMBMDATA:
         return "Too many data";
+    case EMBBADSLAVE:
+        return "Response not from requested slave";
     default:
         return strerror(errnum);
     }
@@ -119,7 +124,8 @@ int modbus_flush(modbus_t *ctx)
 {
     int rc = ctx->backend->flush(ctx);
     if (rc != -1 && ctx->debug) {
-        printf("%d bytes flushed\n", rc);
+        /* Not all backends are able to return the number of bytes flushed */
+        printf("Bytes flushed (%d)\n", rc);
     }
     return rc;
 }
@@ -230,17 +236,10 @@ int modbus_send_raw_request(modbus_t *ctx, uint8_t *raw_req, int raw_req_length)
 }
 
 /*
-    ---------- Request     Indication ----------
-    | Client | ---------------------->| Server |
-    ---------- Confirmation  Response ----------
-*/
-
-typedef enum {
-    /* Request message on the server side */
-    MSG_INDICATION,
-    /* Request message on the client side */
-    MSG_CONFIRMATION
-} msg_type_t;
+ *  ---------- Request     Indication ----------
+ *  | Client | ---------------------->| Server |
+ *  ---------- Confirmation  Response ----------
+ */
 
 /* Computes the length to read after the function received */
 static uint8_t compute_meta_length_after_function(int function,
@@ -326,10 +325,10 @@ static int compute_data_length_after_meta(modbus_t *ctx, uint8_t *msg,
    - read() or recv() error codes
 */
 
-static int receive_msg(modbus_t *ctx, uint8_t *msg, msg_type_t msg_type)
+int _modbus_receive_msg(modbus_t *ctx, uint8_t *msg, msg_type_t msg_type)
 {
     int rc;
-    fd_set rfds;
+    fd_set rset;
     struct timeval tv;
     struct timeval *p_tv;
     int length_to_read;
@@ -345,8 +344,8 @@ static int receive_msg(modbus_t *ctx, uint8_t *msg, msg_type_t msg_type)
     }
 
     /* Add a file descriptor to the set */
-    FD_ZERO(&rfds);
-    FD_SET(ctx->s, &rfds);
+    FD_ZERO(&rset);
+    FD_SET(ctx->s, &rset);
 
     /* We need to analyse the message step by step.  At the first step, we want
      * to reach the function code because all packets contain this
@@ -369,7 +368,7 @@ static int receive_msg(modbus_t *ctx, uint8_t *msg, msg_type_t msg_type)
     }
 
     while (length_to_read != 0) {
-        rc = ctx->backend->select(ctx, &rfds, p_tv, length_to_read);
+        rc = ctx->backend->select(ctx, &rset, p_tv, length_to_read);
         if (rc == -1) {
             _error_print(ctx, "select");
             if (ctx->error_recovery & MODBUS_ERROR_RECOVERY_LINK) {
@@ -448,7 +447,7 @@ static int receive_msg(modbus_t *ctx, uint8_t *msg, msg_type_t msg_type)
             }
         }
 
-        if (length_to_read > 0) {
+        if (length_to_read > 0 && ctx->byte_timeout.tv_sec != -1) {
             /* If there is no character in the buffer, the allowed timeout
                interval between two consecutive bytes is defined by
                byte_timeout */
@@ -467,7 +466,7 @@ static int receive_msg(modbus_t *ctx, uint8_t *msg, msg_type_t msg_type)
 /* Receive the request from a modbus master */
 int modbus_receive(modbus_t *ctx, uint8_t *req)
 {
-    return receive_msg(ctx, req, MSG_INDICATION);
+    return ctx->backend->receive(ctx, req);
 }
 
 /* Receives the confirmation.
@@ -480,7 +479,7 @@ int modbus_receive(modbus_t *ctx, uint8_t *req)
 */
 int modbus_receive_confirmation(modbus_t *ctx, uint8_t *rsp)
 {
-    return receive_msg(ctx, rsp, MSG_CONFIRMATION);
+    return _modbus_receive_msg(ctx, rsp, MSG_CONFIRMATION);
 }
 
 static int check_confirmation(modbus_t *ctx, uint8_t *req,
@@ -489,6 +488,7 @@ static int check_confirmation(modbus_t *ctx, uint8_t *req,
     int rc;
     int rsp_length_computed;
     const int offset = ctx->backend->header_length;
+    const int function = rsp[offset];
 
 	// -- BEGIN QMODBUS MODIFICATION --
 	int s_crc = 0; // TODO
@@ -510,12 +510,33 @@ static int check_confirmation(modbus_t *ctx, uint8_t *req,
 
     rsp_length_computed = compute_response_length_from_request(ctx, req);
 
+    /* Exception code */
+    if (function >= 0x80) {
+        if (rsp_length == (offset + 2 + ctx->backend->checksum_length) &&
+            req[offset] == (rsp[offset] - 0x80)) {
+            /* Valid exception code received */
+
+            int exception_code = rsp[offset + 1];
+            if (exception_code < MODBUS_EXCEPTION_MAX) {
+                errno = MODBUS_ENOBASE + exception_code;
+            } else {
+                errno = EMBBADEXC;
+            }
+            _error_print(ctx, NULL);
+            return -1;
+        } else {
+            errno = EMBBADEXC;
+            _error_print(ctx, NULL);
+            return -1;
+        }
+    }
+
     /* Check length */
-    if (rsp_length == rsp_length_computed ||
-        rsp_length_computed == MSG_LENGTH_UNDEFINED) {
+    if ((rsp_length == rsp_length_computed ||
+         rsp_length_computed == MSG_LENGTH_UNDEFINED) &&
+        function < 0x80) {
         int req_nb_value;
         int rsp_nb_value;
-        const int function = rsp[offset];
 		int num_items = 1;
 		int addr = (req[offset + 1] << 8) + req[offset + 2];
 
@@ -523,7 +544,7 @@ static int check_confirmation(modbus_t *ctx, uint8_t *req,
         if (function != req[offset]) {
             if (ctx->debug) {
                 fprintf(stderr,
-                        "Received function not corresponding to the request (%d != %d)\n",
+                        "Received function not corresponding to the requestd (0x%X != 0x%X)\n",
                         function, req[offset]);
             }
             if (ctx->error_recovery & MODBUS_ERROR_RECOVERY_PROTOCOL) {
@@ -610,18 +631,6 @@ static int check_confirmation(modbus_t *ctx, uint8_t *req,
             errno = EMBBADDATA;
             rc = -1;
         }
-    } else if (rsp_length == (offset + 2 + ctx->backend->checksum_length) &&
-               req[offset] == (rsp[offset] - 0x80)) {
-        /* EXCEPTION CODE RECEIVED */
-
-        int exception_code = rsp[offset + 1];
-        if (exception_code < MODBUS_EXCEPTION_MAX) {
-            errno = MODBUS_ENOBASE + exception_code;
-        } else {
-            errno = EMBBADEXC;
-        }
-        _error_print(ctx, NULL);
-        rc = -1;
     } else {
         if (ctx->debug) {
             fprintf(stderr,
@@ -694,11 +703,6 @@ int modbus_reply(modbus_t *ctx, const uint8_t *req,
     uint8_t rsp[MAX_MESSAGE_LENGTH];
     int rsp_length = 0;
     sft_t sft;
-
-    if (ctx->backend->filter_request(ctx, slave) == 1) {
-        /* Filtered */
-        return 0;
-    }
 
     sft.slave = slave;
     sft.function = function;
@@ -969,11 +973,6 @@ int modbus_reply_exception(modbus_t *ctx, const uint8_t *req,
     int dummy_length = 99;
     sft_t sft;
 
-    if (ctx->backend->filter_request(ctx, slave) == 1) {
-        /* Filtered */
-        return 0;
-    }
-
     sft.slave = slave;
     sft.function = function + 0x80;;
     sft.t_id = ctx->backend->prepare_response_tid(req, &dummy_length);
@@ -1008,7 +1007,7 @@ static int read_io_status(modbus_t *ctx, int function,
         int offset;
         int offset_end;
 
-        rc = receive_msg(ctx, rsp, MSG_CONFIRMATION);
+        rc = _modbus_receive_msg(ctx, rsp, MSG_CONFIRMATION);
         if (rc == -1)
             return -1;
 
@@ -1107,7 +1106,7 @@ static int read_registers(modbus_t *ctx, int function, int addr, int nb,
         int offset;
         int i;
 
-        rc = receive_msg(ctx, rsp, MSG_CONFIRMATION);
+        rc = _modbus_receive_msg(ctx, rsp, MSG_CONFIRMATION);
         if (rc == -1)
             return -1;
 
@@ -1183,7 +1182,7 @@ static int write_single(modbus_t *ctx, int function, int addr, int value)
         /* Used by write_bit and write_register */
         uint8_t rsp[_MIN_REQ_LENGTH];
 
-        rc = receive_msg(ctx, rsp, MSG_CONFIRMATION);
+        rc = _modbus_receive_msg(ctx, rsp, MSG_CONFIRMATION);
         if (rc == -1)
             return -1;
 
@@ -1254,7 +1253,7 @@ int modbus_write_bits(modbus_t *ctx, int addr, int nb, const uint8_t *src)
     if (rc > 0) {
         uint8_t rsp[MAX_MESSAGE_LENGTH];
 
-        rc = receive_msg(ctx, rsp, MSG_CONFIRMATION);
+        rc = _modbus_receive_msg(ctx, rsp, MSG_CONFIRMATION);
         if (rc == -1)
             return -1;
 
@@ -1300,7 +1299,7 @@ int modbus_write_registers(modbus_t *ctx, int addr, int nb, const uint16_t *src)
     if (rc > 0) {
         uint8_t rsp[MAX_MESSAGE_LENGTH];
 
-        rc = receive_msg(ctx, rsp, MSG_CONFIRMATION);
+        rc = _modbus_receive_msg(ctx, rsp, MSG_CONFIRMATION);
         if (rc == -1)
             return -1;
 
@@ -1363,7 +1362,7 @@ int modbus_write_and_read_registers(modbus_t *ctx,
     if (rc > 0) {
         int offset;
 
-        rc = receive_msg(ctx, rsp, MSG_CONFIRMATION);
+        rc = _modbus_receive_msg(ctx, rsp, MSG_CONFIRMATION);
         if (rc == -1)
             return -1;
 
@@ -1404,7 +1403,7 @@ int modbus_report_slave_id(modbus_t *ctx, uint8_t *dest)
         int offset;
         uint8_t rsp[MAX_MESSAGE_LENGTH];
 
-        rc = receive_msg(ctx, rsp, MSG_CONFIRMATION);
+        rc = _modbus_receive_msg(ctx, rsp, MSG_CONFIRMATION);
         if (rc == -1)
             return -1;
 
@@ -1608,6 +1607,10 @@ modbus_mapping_t* modbus_mapping_new(int nb_bits, int nb_input_bits,
 /* Frees the 4 arrays */
 void modbus_mapping_free(modbus_mapping_t *mb_mapping)
 {
+    if (mb_mapping != NULL) {
+        return;
+    }
+
     free(mb_mapping->tab_input_registers);
     free(mb_mapping->tab_registers);
     free(mb_mapping->tab_input_bits);
@@ -1666,7 +1669,7 @@ void modbus_poll(modbus_t* ctx)
 	tv.tv_sec = 0;
 	tv.tv_usec = 500;
 	modbus_set_response_timeout( ctx, &tv );
-	const int ret = receive_msg( ctx, &msg_len, MSG_CONFIRMATION );	/* wait for 0.5 ms */
+	const int ret = _modbus_receive_msg( ctx, &msg_len, MSG_CONFIRMATION );	/* wait for 0.5 ms */
 	tv.tv_usec = _RESPONSE_TIMEOUT;
 	modbus_set_response_timeout( ctx, &tv );
 	if( ( ret < 0 && msg_len > 0 ) || ret >= 0 )
