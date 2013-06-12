@@ -14,18 +14,18 @@ SOURCES += src/main.cpp \
 	3rdparty/libmodbus/src/modbus.c \
 	3rdparty/libmodbus/src/modbus-data.c \
 	3rdparty/libmodbus/src/modbus-rtu.c \
-	3rdparty/libmodbus/src/modbus-tcp.c \ 
+	3rdparty/libmodbus/src/modbus-tcp.c \
     src/serialsettingswidget.cpp
 
 HEADERS += src/mainwindow.h \
 	src/BatchProcessor.h \
     3rdparty/qextserialport/qextserialport.h \
     3rdparty/qextserialport/qextserialenumerator.h \
-    3rdparty/libmodbus/src/modbus.h \ 
+    3rdparty/libmodbus/src/modbus.h \
     src/serialsettingswidget.h
 
 
-INCLUDEPATH += 3rdparty/libmodbus 3rdparty/libmodbus/src 3rdparty/qextserialport
+INCLUDEPATH += 3rdparty/libmodbus 3rdparty/libmodbus/src 3rdparty/qextserialport src
 
 unix:SOURCES += 3rdparty/qextserialport/posix_qextserialport.cpp	\
 		3rdparty/qextserialport/qextserialenumerator_unix.cpp
@@ -37,7 +37,7 @@ win32:LIBS += -lsetupapi -lwsock32
 
 FORMS += forms/mainwindow.ui \
     forms/about.ui	\
-    forms/BatchProcessor.ui \ 
-    src/serialsettingswidget.ui
+    forms/BatchProcessor.ui \
+    forms/serialsettingswidget.ui
 
 RESOURCES += data/qmodbus.qrc

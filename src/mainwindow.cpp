@@ -34,7 +34,7 @@
 #include "BatchProcessor.h"
 #include "modbus.h"
 #include "modbus-private.h"
-#include "qextserialenumerator.h"
+
 #include "ui_mainwindow.h"
 
 
@@ -45,42 +45,6 @@ const int DataColumn = 2;
 extern MainWindow * globalMainWin;
 
 
-int MainWindow::setupSerialPort()
-{
-	QSettings s;
-
-	int portIndex = 0;
-	int i = 0;
-	foreach( QextPortInfo port, QextSerialEnumerator::getPorts() )
-	{
-		ui->serialPort->addItem( port.friendName );
-		if( port.friendName == s.value( "serialinterface" ) )
-		{
-			portIndex = i;
-		}
-		++i;
-	}
-	ui->serialPort->setCurrentIndex( portIndex );
-
-	ui->baud->setCurrentIndex( ui->baud->findText( s.value( "serialbaudrate" ).toString() ) );
-	ui->parity->setCurrentIndex( ui->parity->findText( s.value( "serialparity" ).toString() ) );
-	ui->stopBits->setCurrentIndex( ui->stopBits->findText( s.value( "serialstopbits" ).toString() ) );
-	ui->dataBits->setCurrentIndex( ui->dataBits->findText( s.value( "serialdatabits" ).toString() ) );
-
-	connect( ui->serialPort, SIGNAL( currentIndexChanged( int ) ),
-			this, SLOT( changeSerialPort( int ) ) );
-	connect( ui->baud, SIGNAL( currentIndexChanged( int ) ),
-			this, SLOT( changeSerialPort( int ) ) );
-	connect( ui->dataBits, SIGNAL( currentIndexChanged( int ) ),
-			this, SLOT( changeSerialPort( int ) ) );
-	connect( ui->stopBits, SIGNAL( currentIndexChanged( int ) ),
-			this, SLOT( changeSerialPort( int ) ) );
-	connect( ui->parity, SIGNAL( currentIndexChanged( int ) ),
-			this, SLOT( changeSerialPort( int ) ) );
-
-	return portIndex;
-}
-
 MainWindow::MainWindow( QWidget * _parent ) :
 	QMainWindow( _parent ),
 	ui( new Ui::MainWindowClass ),
@@ -88,7 +52,7 @@ MainWindow::MainWindow( QWidget * _parent ) :
 {
 	ui->setupUi(this);
 
-	int portIndex = setupSerialPort();
+	ui->serialSettingsWidget->setupSerialPort();
 
 	connect( ui->slaveID, SIGNAL( valueChanged( int ) ),
 			this, SLOT( updateRequestPreview() ) );
@@ -118,7 +82,7 @@ MainWindow::MainWindow( QWidget * _parent ) :
 	connect( ui->functionCode, SIGNAL( currentIndexChanged( int ) ),
 		this, SLOT( enableHexView() ) );
 
-	changeSerialPort( portIndex );
+
 	updateRegisterView();
 	updateRequestPreview();
 	enableHexView();
@@ -265,60 +229,7 @@ static inline int stringToHex( QString s )
 
 
 
-void MainWindow::changeSerialPort( int )
-{
-	const int iface = ui->serialPort->currentIndex();
 
-	QList<QextPortInfo> ports = QextSerialEnumerator::getPorts();
-	if( !ports.isEmpty() )
-	{
-		QSettings settings;
-		settings.setValue( "serialinterface", ports[iface].friendName );
-		settings.setValue( "serialbaudrate", ui->baud->currentText() );
-		settings.setValue( "serialparity", ui->parity->currentText() );
-		settings.setValue( "serialdatabits", ui->dataBits->currentText() );
-		settings.setValue( "serialstopbits", ui->stopBits->currentText() );
-#ifdef Q_OS_WIN32
-		const QString port = embracedString( ports[iface].friendName ) +
-									":";
-#else
-		const QString port = ports[iface].physName;
-#endif
-
-		char parity;
-		switch( ui->parity->currentIndex() )
-		{
-			case 1: parity = 'O'; break;
-			case 2: parity = 'E'; break;
-			default:
-			case 0: parity = 'N'; break;
-		}
-
-		if( m_modbus )
-		{
-			modbus_close( m_modbus );
-			modbus_free( m_modbus );
-		}
-
-		m_modbus = modbus_new_rtu( port.toAscii().constData(),
-				ui->baud->currentText().toInt(),
-				parity,
-				ui->dataBits->currentText().toInt(),
-				ui->stopBits->currentText().toInt() );
-
-		if( modbus_connect( m_modbus ) == -1 )
-		{
-			QMessageBox::critical( this, tr( "Connection failed" ),
-				tr( "Could not connect serial port!" ) );
-		}
-	}
-	else
-	{
-		QMessageBox::critical( this, tr( "No serial port found" ),
-				tr( "Could not find any serial port "
-						"on this computer!" ) );
-	}
-}
 
 
 
