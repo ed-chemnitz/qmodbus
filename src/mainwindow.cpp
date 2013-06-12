@@ -45,13 +45,8 @@ const int DataColumn = 2;
 extern MainWindow * globalMainWin;
 
 
-MainWindow::MainWindow( QWidget * _parent ) :
-	QMainWindow( _parent ),
-	ui( new Ui::MainWindowClass ),
-	m_modbus( NULL )
+int MainWindow::setupSerialPort()
 {
-	ui->setupUi(this);
-
 	QSettings s;
 
 	int portIndex = 0;
@@ -82,6 +77,18 @@ MainWindow::MainWindow( QWidget * _parent ) :
 			this, SLOT( changeSerialPort( int ) ) );
 	connect( ui->parity, SIGNAL( currentIndexChanged( int ) ),
 			this, SLOT( changeSerialPort( int ) ) );
+
+	return portIndex;
+}
+
+MainWindow::MainWindow( QWidget * _parent ) :
+	QMainWindow( _parent ),
+	ui( new Ui::MainWindowClass ),
+	m_modbus( NULL )
+{
+	ui->setupUi(this);
+
+	int portIndex = setupSerialPort();
 
 	connect( ui->slaveID, SIGNAL( valueChanged( int ) ),
 			this, SLOT( updateRequestPreview() ) );

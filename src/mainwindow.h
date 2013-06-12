@@ -67,6 +67,7 @@ public:
 	void busMonitorRawData( uint8_t * data, uint8_t dataLen, bool addNewline );
 
 
+	int setupSerialPort();
 private slots:
 	void changeSerialPort( int );
 	void clearBusMonTable( void );
