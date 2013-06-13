@@ -52,8 +52,7 @@ MainWindow::MainWindow( QWidget * _parent ) :
 {
 	ui->setupUi(this);
 
-	ui->serialSettingsWidget->setupSerialPort();
-
+	connect( ui->serialSettingsWidget, SIGNAL(serialPortActive(bool)), this , SLOT(onSerialPortActive(bool)));
 	connect( ui->slaveID, SIGNAL( valueChanged( int ) ),
 			this, SLOT( updateRequestPreview() ) );
 	connect( ui->functionCode, SIGNAL( currentIndexChanged( int ) ),
@@ -525,6 +524,16 @@ void MainWindow::openBatchProcessor()
 void MainWindow::aboutQModBus( void )
 {
 	AboutDialog( this ).exec();
+}
+
+void MainWindow::onSerialPortActive(bool active)
+{
+	if (active) {
+		m_modbus = ui->serialSettingsWidget->modbus();
+	}
+	else {
+		m_modbus = NULL;
+	}
 }
 
 

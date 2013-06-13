@@ -10,6 +10,7 @@ SerialSettingsWidget::SerialSettingsWidget(QWidget *parent) :
   , m_serialModbus( NULL )
 {
 	ui->setupUi(this);
+	enableGuiItems(false);
 }
 
 SerialSettingsWidget::~SerialSettingsWidget()
@@ -17,7 +18,7 @@ SerialSettingsWidget::~SerialSettingsWidget()
 	delete ui;
 }
 
-int SerialSettingsWidget::setupSerialPort()
+int SerialSettingsWidget::setupModbusPort()
 {
 	QSettings s;
 
@@ -54,13 +55,19 @@ int SerialSettingsWidget::setupSerialPort()
 	return portIndex;
 }
 
-void SerialSettingsWidget::changeModbusInterface(const QString port, char parity)
+void SerialSettingsWidget::releaseSerialModbus()
 {
 	if( m_serialModbus )
 	{
 		modbus_close( m_serialModbus );
 		modbus_free( m_serialModbus );
+		m_serialModbus = NULL;
 	}
+}
+
+void SerialSettingsWidget::changeModbusInterface(const QString port, char parity)
+{
+	releaseSerialModbus();
 
 	m_serialModbus = modbus_new_rtu( port.toAscii().constData(),
 			ui->baud->currentText().toInt(),
@@ -114,3 +121,24 @@ void SerialSettingsWidget::changeSerialPort( int )
 	}
 }
 
+
+void SerialSettingsWidget::enableGuiItems(bool checked)
+{
+	ui->serialPort->setEnabled(checked);
+	ui->baud->setEnabled(checked);
+	ui->dataBits->setEnabled(checked);
+	ui->stopBits->setEnabled(checked);
+	ui->parity->setEnabled(checked);
+}
+
+void SerialSettingsWidget::on_checkBox_clicked(bool checked)
+{
+	if (checked) {
+		setupModbusPort();
+	}
+	else {
+		releaseSerialModbus();
+	}
+	enableGuiItems(checked);
+	emit serialPortActive(checked);
+}
