@@ -2,6 +2,8 @@ TARGET = QModBus
 TEMPLATE = app
 VERSION = 0.1.0
 
+QT += network
+
 MOC_DIR     = generated
 OBJECTS_DIR = generated
 UI_DIR      = generated
@@ -15,14 +17,19 @@ SOURCES += src/main.cpp \
 	3rdparty/libmodbus/src/modbus-data.c \
 	3rdparty/libmodbus/src/modbus-rtu.c \
 	3rdparty/libmodbus/src/modbus-tcp.c \
-    src/serialsettingswidget.cpp
+    src/serialsettingswidget.cpp \
+    src/tcpipsettingswidget.cpp \
+    src/networkaddressvalidator.cpp
 
 HEADERS += src/mainwindow.h \
 	src/BatchProcessor.h \
     3rdparty/qextserialport/qextserialport.h \
     3rdparty/qextserialport/qextserialenumerator.h \
     3rdparty/libmodbus/src/modbus.h \
-    src/serialsettingswidget.h
+    src/serialsettingswidget.h \
+    src/imodbus.h \
+    src/tcpipsettingswidget.h \
+    src/networkaddressvalidator.h
 
 
 INCLUDEPATH += 3rdparty/libmodbus 3rdparty/libmodbus/src 3rdparty/qextserialport src
@@ -38,6 +45,7 @@ win32:LIBS += -lsetupapi -lwsock32
 FORMS += forms/mainwindow.ui \
     forms/about.ui	\
     forms/BatchProcessor.ui \
-    forms/serialsettingswidget.ui
+    forms/serialsettingswidget.ui \
+    forms/tcpipsettingswidget.ui
 
 RESOURCES += data/qmodbus.qrc
