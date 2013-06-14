@@ -18,26 +18,38 @@
     <normaloff>:/images/logo.png</normaloff>:/images/logo.png</iconset>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QHBoxLayout" name="horizontalLayout">
-    <property name="spacing">
-     <number>0</number>
-    </property>
-    <property name="margin">
-     <number>0</number>
-    </property>
+   <layout class="QHBoxLayout" name="horizontalLayout_3">
     <item>
      <layout class="QVBoxLayout" name="verticalLayout">
-      <property name="spacing">
-       <number>0</number>
-      </property>
       <item>
-       <widget class="SerialSettingsWidget" name="serialSettingsWidget" native="true"/>
+       <widget class="QTabWidget" name="tabWidget">
+        <property name="currentIndex">
+         <number>1</number>
+        </property>
+        <widget class="QWidget" name="tab">
+         <attribute name="title">
+          <string>Modbus RTU</string>
+         </attribute>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="SerialSettingsWidget" name="serialSettingsWidget" native="true"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab_2">
+         <attribute name="title">
+          <string>Modbus TCP</string>
+         </attribute>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <widget class="TcpIpSettingsWidget" name="tcpSettingsWidget" native="true"/>
+          </item>
+         </layout>
+        </widget>
+       </widget>
       </item>
       <item>
        <widget class="QGroupBox" name="groupBox_2">
-        <property name="styleSheet">
-         <string notr="true">background-color:'yellow'</string>
-        </property>
         <property name="title">
          <string>ModBus Request</string>
         </property>
@@ -222,9 +234,6 @@
       </item>
       <item>
        <widget class="QGroupBox" name="groupBox_4">
-        <property name="styleSheet">
-         <string notr="true">background-color:'red'</string>
-        </property>
         <property name="title">
          <string>Registers</string>
         </property>
@@ -264,9 +273,6 @@
     </item>
     <item>
      <widget class="QGroupBox" name="groupBox_3">
-      <property name="styleSheet">
-       <string notr="true">background-color:'green'</string>
-      </property>
       <property name="title">
        <string>Bus Monitor</string>
       </property>
@@ -485,6 +491,12 @@
    <class>SerialSettingsWidget</class>
    <extends>QWidget</extends>
    <header>serialsettingswidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>TcpIpSettingsWidget</class>
+   <extends>QWidget</extends>
+   <header>tcpipsettingswidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

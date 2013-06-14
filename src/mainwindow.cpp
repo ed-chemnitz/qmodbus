@@ -53,6 +53,7 @@ MainWindow::MainWindow( QWidget * _parent ) :
 	ui->setupUi(this);
 
 	connect( ui->serialSettingsWidget, SIGNAL(serialPortActive(bool)), this , SLOT(onSerialPortActive(bool)));
+	connect( ui->tcpSettingsWidget,   SIGNAL(tcpPortActive(bool)), this, SLOT(onTcpPortActive(bool)));
 	connect( ui->slaveID, SIGNAL( valueChanged( int ) ),
 			this, SLOT( updateRequestPreview() ) );
 	connect( ui->functionCode, SIGNAL( currentIndexChanged( int ) ),
@@ -101,14 +102,10 @@ MainWindow::MainWindow( QWidget * _parent ) :
 }
 
 
-
-
 MainWindow::~MainWindow()
 {
 	delete ui;
 }
-
-
 
 void MainWindow::busMonitorAddItem( bool isRequest,
 					uint8_t slave,
@@ -163,8 +160,6 @@ void MainWindow::busMonitorAddItem( bool isRequest,
 }
 
 
-
-
 void MainWindow::busMonitorRawData( uint8_t * data, uint8_t dataLen, bool addNewline )
 {
 	if( dataLen > 0 )
@@ -183,8 +178,6 @@ void MainWindow::busMonitorRawData( uint8_t * data, uint8_t dataLen, bool addNew
 		ui->rawData->setLineWrapMode( QPlainTextEdit::NoWrap );
 	}
 }
-
-
 
 
 static QString descriptiveDataTypeName( int funcCode )
@@ -210,14 +203,10 @@ static QString descriptiveDataTypeName( int funcCode )
 }
 
 
-
-
 static inline QString embracedString( const QString & s )
 {
 	return s.section( '(', 1 ).section( ')', 0, 0 );
 }
-
-
 
 
 static inline int stringToHex( QString s )
@@ -226,19 +215,10 @@ static inline int stringToHex( QString s )
 }
 
 
-
-
-
-
-
-
-
 void MainWindow::clearBusMonTable( void )
 {
 	ui->busMonTable->setRowCount( 0 );
 }
-
-
 
 
 void MainWindow::updateRequestPreview( void )
@@ -490,17 +470,11 @@ void MainWindow::sendModbusRequest( void )
 	}
 }
 
-
-
-
 void MainWindow::resetStatus( void )
 {
 	m_statusText->setText( tr( "Ready" ) );
 	m_statusInd->setStyleSheet( "background: #aaa;" );
 }
-
-
-
 
 void MainWindow::pollForDataOnBus( void )
 {
@@ -511,14 +485,10 @@ void MainWindow::pollForDataOnBus( void )
 }
 
 
-
-
 void MainWindow::openBatchProcessor()
 {
 	BatchProcessor( this, m_modbus ).exec();
 }
-
-
 
 
 void MainWindow::aboutQModBus( void )
@@ -530,6 +500,16 @@ void MainWindow::onSerialPortActive(bool active)
 {
 	if (active) {
 		m_modbus = ui->serialSettingsWidget->modbus();
+	}
+	else {
+		m_modbus = NULL;
+	}
+}
+
+void MainWindow::onTcpPortActive(bool active)
+{
+	if (active) {
+		m_modbus = ui->tcpSettingsWidget->modbus();
 	}
 	else {
 		m_modbus = NULL;

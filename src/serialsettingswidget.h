@@ -23,7 +23,7 @@ public:
 	virtual int setupModbusPort();
 
 protected:
-	void changeModbusInterface(const QString port, char parity);
+	void changeModbusInterface(const QString &port, char parity);
 	void releaseSerialModbus();
 	void enableGuiItems(bool checked);
 

@@ -78,6 +78,7 @@ private slots:
 	void openBatchProcessor();
 	void aboutQModBus( void );
 	void onSerialPortActive(bool active);
+	void onTcpPortActive(bool active);
 
 private:
 	Ui::MainWindowClass * ui;

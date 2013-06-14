@@ -33,14 +33,22 @@ SET(CMAKE_CXX_FLAGS "-O2 -g -fno-exceptions -Wall ${CMAKE_CXX_FLAGS}")
 SET(qmodbus_SOURCES src/main.cpp
     src/mainwindow.cpp
     src/BatchProcessor.cpp
+    src/serialsettingswidget.cpp 
+    src/tcpipsettingswidget.cpp 
+    src/ip4validator.cpp
     3rdparty/qextserialport/qextserialport.cpp
-	3rdparty/libmodbus/src/modbus.c
-	3rdparty/libmodbus/src/modbus-data.c
-	3rdparty/libmodbus/src/modbus-rtu.c
-	3rdparty/libmodbus/src/modbus-tcp.c)
+    3rdparty/libmodbus/src/modbus.c
+    3rdparty/libmodbus/src/modbus-data.c
+    3rdparty/libmodbus/src/modbus-rtu.c
+    3rdparty/libmodbus/src/modbus-tcp.c
+)
 
 SET(qmodbus_INCLUDES src/mainwindow.h
     src/BatchProcessor.h
+    src/serialsettingswidget.h 
+    src/imodbus.h 
+    src/tcpipsettingswidget.h 
+    src/ip4validator.h
     3rdparty/qextserialport/qextserialport.h
     3rdparty/qextserialport/qextserialenumerator.h
     3rdparty/libmodbus/src/modbus.h)
@@ -63,15 +71,17 @@ ELSE(WIN32)
 ENDIF(WIN32)
 
 SET(qmodbus_UI forms/mainwindow.ui
-					forms/about.ui
-					forms/BatchProcessor.ui
-				)
+  forms/about.ui
+  forms/BatchProcessor.ui
+  forms/serialsettingswidget.ui 
+  forms/tcpipsettingswidget.ui
+  )
 
 QT4_WRAP_CPP(qmodbus_MOC_out ${qmodbus_INCLUDES})
 QT4_WRAP_UI(qmodbus_UIC_out ${qmodbus_UI})
 QT4_ADD_RESOURCES(qmodbus_RCC_out data/qmodbus.qrc)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libmodbus ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libmodbus/src ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/qextserialport ${CMAKE_BINARY_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libmodbus ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libmodbus/src ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/qextserialport ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src)
 LINK_LIBRARIES(${QT_LIBRARIES})
 ADD_EXECUTABLE(qmodbus ${qmodbus_SOURCES} ${qmodbus_UIC_out} ${qmodbus_MOC_out} ${qmodbus_RCC_out} ${WINRC})
 

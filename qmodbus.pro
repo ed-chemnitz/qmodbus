@@ -2,7 +2,7 @@ TARGET = QModBus
 TEMPLATE = app
 VERSION = 0.1.0
 
-QT += network
+#QT += network
 
 MOC_DIR     = generated
 OBJECTS_DIR = generated
@@ -19,7 +19,7 @@ SOURCES += src/main.cpp \
 	3rdparty/libmodbus/src/modbus-tcp.c \
     src/serialsettingswidget.cpp \
     src/tcpipsettingswidget.cpp \
-    src/networkaddressvalidator.cpp
+    src/ip4validator.cpp
 
 HEADERS += src/mainwindow.h \
 	src/BatchProcessor.h \
@@ -29,7 +29,7 @@ HEADERS += src/mainwindow.h \
     src/serialsettingswidget.h \
     src/imodbus.h \
     src/tcpipsettingswidget.h \
-    src/networkaddressvalidator.h
+    src/ip4validator.h
 
 
 INCLUDEPATH += 3rdparty/libmodbus 3rdparty/libmodbus/src 3rdparty/qextserialport src

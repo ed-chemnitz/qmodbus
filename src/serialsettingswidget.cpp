@@ -65,7 +65,7 @@ void SerialSettingsWidget::releaseSerialModbus()
 	}
 }
 
-void SerialSettingsWidget::changeModbusInterface(const QString port, char parity)
+void SerialSettingsWidget::changeModbusInterface(const QString& port, char parity)
 {
 	releaseSerialModbus();
 
