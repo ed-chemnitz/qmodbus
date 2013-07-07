@@ -34,7 +34,7 @@
 #include "BatchProcessor.h"
 #include "modbus.h"
 #include "modbus-private.h"
-#include "qextserialenumerator.h"
+
 #include "ui_mainwindow.h"
 
 
@@ -52,37 +52,8 @@ MainWindow::MainWindow( QWidget * _parent ) :
 {
 	ui->setupUi(this);
 
-	QSettings s;
-
-	int portIndex = 0;
-	int i = 0;
-	foreach( QextPortInfo port, QextSerialEnumerator::getPorts() )
-	{
-		ui->serialPort->addItem( port.friendName );
-		if( port.friendName == s.value( "serialinterface" ) )
-		{
-			portIndex = i;
-		}
-		++i;
-	}
-	ui->serialPort->setCurrentIndex( portIndex );
-
-	ui->baud->setCurrentIndex( ui->baud->findText( s.value( "serialbaudrate" ).toString() ) );
-	ui->parity->setCurrentIndex( ui->parity->findText( s.value( "serialparity" ).toString() ) );
-	ui->stopBits->setCurrentIndex( ui->stopBits->findText( s.value( "serialstopbits" ).toString() ) );
-	ui->dataBits->setCurrentIndex( ui->dataBits->findText( s.value( "serialdatabits" ).toString() ) );
-
-	connect( ui->serialPort, SIGNAL( currentIndexChanged( int ) ),
-			this, SLOT( changeSerialPort( int ) ) );
-	connect( ui->baud, SIGNAL( currentIndexChanged( int ) ),
-			this, SLOT( changeSerialPort( int ) ) );
-	connect( ui->dataBits, SIGNAL( currentIndexChanged( int ) ),
-			this, SLOT( changeSerialPort( int ) ) );
-	connect( ui->stopBits, SIGNAL( currentIndexChanged( int ) ),
-			this, SLOT( changeSerialPort( int ) ) );
-	connect( ui->parity, SIGNAL( currentIndexChanged( int ) ),
-			this, SLOT( changeSerialPort( int ) ) );
-
+	connect( ui->serialSettingsWidget, SIGNAL(serialPortActive(bool)), this , SLOT(onSerialPortActive(bool)));
+	connect( ui->tcpSettingsWidget,   SIGNAL(tcpPortActive(bool)), this, SLOT(onTcpPortActive(bool)));
 	connect( ui->slaveID, SIGNAL( valueChanged( int ) ),
 			this, SLOT( updateRequestPreview() ) );
 	connect( ui->functionCode, SIGNAL( currentIndexChanged( int ) ),
@@ -111,7 +82,7 @@ MainWindow::MainWindow( QWidget * _parent ) :
 	connect( ui->functionCode, SIGNAL( currentIndexChanged( int ) ),
 		this, SLOT( enableHexView() ) );
 
-	changeSerialPort( portIndex );
+
 	updateRegisterView();
 	updateRequestPreview();
 	enableHexView();
@@ -131,14 +102,10 @@ MainWindow::MainWindow( QWidget * _parent ) :
 }
 
 
-
-
 MainWindow::~MainWindow()
 {
 	delete ui;
 }
-
-
 
 void MainWindow::busMonitorAddItem( bool isRequest,
 					uint8_t slave,
@@ -193,8 +160,6 @@ void MainWindow::busMonitorAddItem( bool isRequest,
 }
 
 
-
-
 void MainWindow::busMonitorRawData( uint8_t * data, uint8_t dataLen, bool addNewline )
 {
 	if( dataLen > 0 )
@@ -213,8 +178,6 @@ void MainWindow::busMonitorRawData( uint8_t * data, uint8_t dataLen, bool addNew
 		ui->rawData->setLineWrapMode( QPlainTextEdit::NoWrap );
 	}
 }
-
-
 
 
 static QString descriptiveDataTypeName( int funcCode )
@@ -240,14 +203,10 @@ static QString descriptiveDataTypeName( int funcCode )
 }
 
 
-
-
 static inline QString embracedString( const QString & s )
 {
 	return s.section( '(', 1 ).section( ')', 0, 0 );
 }
-
-
 
 
 static inline int stringToHex( QString s )
@@ -256,72 +215,10 @@ static inline int stringToHex( QString s )
 }
 
 
-
-
-void MainWindow::changeSerialPort( int )
-{
-	const int iface = ui->serialPort->currentIndex();
-
-	QList<QextPortInfo> ports = QextSerialEnumerator::getPorts();
-	if( !ports.isEmpty() )
-	{
-		QSettings settings;
-		settings.setValue( "serialinterface", ports[iface].friendName );
-		settings.setValue( "serialbaudrate", ui->baud->currentText() );
-		settings.setValue( "serialparity", ui->parity->currentText() );
-		settings.setValue( "serialdatabits", ui->dataBits->currentText() );
-		settings.setValue( "serialstopbits", ui->stopBits->currentText() );
-#ifdef Q_OS_WIN32
-		const QString port = embracedString( ports[iface].friendName ) +
-									":";
-#else
-		const QString port = ports[iface].physName;
-#endif
-
-		char parity;
-		switch( ui->parity->currentIndex() )
-		{
-			case 1: parity = 'O'; break;
-			case 2: parity = 'E'; break;
-			default:
-			case 0: parity = 'N'; break;
-		}
-
-		if( m_modbus )
-		{
-			modbus_close( m_modbus );
-			modbus_free( m_modbus );
-		}
-
-		m_modbus = modbus_new_rtu( port.toAscii().constData(),
-				ui->baud->currentText().toInt(),
-				parity,
-				ui->dataBits->currentText().toInt(),
-				ui->stopBits->currentText().toInt() );
-
-		if( modbus_connect( m_modbus ) == -1 )
-		{
-			QMessageBox::critical( this, tr( "Connection failed" ),
-				tr( "Could not connect serial port!" ) );
-		}
-	}
-	else
-	{
-		QMessageBox::critical( this, tr( "No serial port found" ),
-				tr( "Could not find any serial port "
-						"on this computer!" ) );
-	}
-}
-
-
-
-
 void MainWindow::clearBusMonTable( void )
 {
 	ui->busMonTable->setRowCount( 0 );
 }
-
-
 
 
 void MainWindow::updateRequestPreview( void )
@@ -573,17 +470,11 @@ void MainWindow::sendModbusRequest( void )
 	}
 }
 
-
-
-
 void MainWindow::resetStatus( void )
 {
 	m_statusText->setText( tr( "Ready" ) );
 	m_statusInd->setStyleSheet( "background: #aaa;" );
 }
-
-
-
 
 void MainWindow::pollForDataOnBus( void )
 {
@@ -594,19 +485,35 @@ void MainWindow::pollForDataOnBus( void )
 }
 
 
-
-
 void MainWindow::openBatchProcessor()
 {
 	BatchProcessor( this, m_modbus ).exec();
 }
 
 
-
-
 void MainWindow::aboutQModBus( void )
 {
 	AboutDialog( this ).exec();
+}
+
+void MainWindow::onSerialPortActive(bool active)
+{
+	if (active) {
+		m_modbus = ui->serialSettingsWidget->modbus();
+	}
+	else {
+		m_modbus = NULL;
+	}
+}
+
+void MainWindow::onTcpPortActive(bool active)
+{
+	if (active) {
+		m_modbus = ui->tcpSettingsWidget->modbus();
+	}
+	else {
+		m_modbus = NULL;
+	}
 }
 
 

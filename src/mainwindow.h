@@ -68,7 +68,6 @@ public:
 
 
 private slots:
-	void changeSerialPort( int );
 	void clearBusMonTable( void );
 	void updateRequestPreview( void );
 	void updateRegisterView( void );
@@ -78,7 +77,8 @@ private slots:
 	void pollForDataOnBus( void );
 	void openBatchProcessor();
 	void aboutQModBus( void );
-
+	void onSerialPortActive(bool active);
+	void onTcpPortActive(bool active);
 
 private:
 	Ui::MainWindowClass * ui;
