@@ -1,10 +1,13 @@
-QModBus
-=======
+QModBusTcp
+==========
 
 Copyright (c) 2009-2011 Tobias Doerffel, EDC Electronic Design Chemnitz GmbH
+Copyright (c) 2013      Karl-Heinz Reichel, ing-büro reichel-langer
 
 http://www.ed-chemnitz.de
-http://qmodbus.sourceforge.net
+http://www.techdrivers.de
+
+https://bitbucket.org/khreichel/qmodbustcp
 
 
 This program is free software; you can redistribute it and/or modify 
@@ -44,7 +47,7 @@ Requirements
 Building
 --------
 
-See INSTALL for information on how to build QModBus.
+See INSTALL for information on how to build QModBusTcp.
 
 
 
@@ -52,4 +55,4 @@ Contact
 -------
 
 Any suggestions, patches etc. are welcome. Simply send a mail to
-tobias.doerffel (at) gmail (dot) com.
+kh.reichel@techdrivers.de.
