@@ -71,10 +71,10 @@ ELSE(WIN32)
 ENDIF(WIN32)
 
 SET(qmodbus_UI forms/mainwindow.ui
-  forms/about.ui
-  forms/BatchProcessor.ui
-  forms/serialsettingswidget.ui 
-  forms/tcpipsettingswidget.ui
+               forms/about.ui
+               forms/BatchProcessor.ui
+               forms/serialsettingswidget.ui 
+               forms/tcpipsettingswidget.ui
   )
 
 QT4_WRAP_CPP(qmodbus_MOC_out ${qmodbus_INCLUDES})
