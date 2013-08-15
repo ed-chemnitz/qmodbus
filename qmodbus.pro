@@ -17,7 +17,8 @@ SOURCES += src/main.cpp \
     3rdparty/libmodbus/src/modbus-tcp.c \
     src/serialsettingswidget.cpp \
     src/tcpipsettingswidget.cpp \
-    src/ip4validator.cpp
+    src/ipaddressctrl.cpp \
+    src/iplineedit.cpp
 
 HEADERS += src/mainwindow.h \
     src/BatchProcessor.h \
@@ -27,8 +28,8 @@ HEADERS += src/mainwindow.h \
     src/serialsettingswidget.h \
     src/imodbus.h \
     src/tcpipsettingswidget.h \
-    src/ip4validator.h
-
+    src/ipaddressctrl.h \
+    src/iplineedit.h
 
 INCLUDEPATH += 3rdparty/libmodbus \
                3rdparty/libmodbus/src \
@@ -36,13 +37,13 @@ INCLUDEPATH += 3rdparty/libmodbus \
                src
 unix {
     SOURCES += 3rdparty/qextserialport/posix_qextserialport.cpp	\
- 	       3rdparty/qextserialport/qextserialenumerator_unix.cpp
+           3rdparty/qextserialport/qextserialenumerator_unix.cpp
     DEFINES += _TTY_POSIX_
 }
 
 win32 {
     SOURCES += 3rdparty/qextserialport/win_qextserialport.cpp \
-  	       3rdparty/qextserialport/qextserialenumerator_win.cpp
+           3rdparty/qextserialport/qextserialenumerator_win.cpp
     DEFINES += _TTY_WIN_  WINVER=0x0501
     LIBS += -lsetupapi -lwsock32
 }
@@ -51,6 +52,7 @@ FORMS += forms/mainwindow.ui \
     forms/about.ui	\
     forms/BatchProcessor.ui \
     forms/serialsettingswidget.ui \
-    forms/tcpipsettingswidget.ui
+    forms/tcpipsettingswidget.ui \
+    forms/ipaddressctrl.ui
 
 RESOURCES += data/qmodbus.qrc

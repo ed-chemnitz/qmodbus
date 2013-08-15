@@ -35,7 +35,8 @@ SET(qmodbus_SOURCES src/main.cpp
     src/BatchProcessor.cpp
     src/serialsettingswidget.cpp 
     src/tcpipsettingswidget.cpp 
-    src/ip4validator.cpp
+    src/ipaddressctrl.cpp
+    src/iplineedit.cpp
     3rdparty/qextserialport/qextserialport.cpp
     3rdparty/libmodbus/src/modbus.c
     3rdparty/libmodbus/src/modbus-data.c
@@ -48,7 +49,8 @@ SET(qmodbus_INCLUDES src/mainwindow.h
     src/serialsettingswidget.h 
     src/imodbus.h 
     src/tcpipsettingswidget.h 
-    src/ip4validator.h
+    src/ipaddressctrl.h
+    src/iplineedit.h
     3rdparty/qextserialport/qextserialport.h
     3rdparty/qextserialport/qextserialenumerator.h
     3rdparty/libmodbus/src/modbus.h)
@@ -75,6 +77,7 @@ SET(qmodbus_UI forms/mainwindow.ui
                forms/BatchProcessor.ui
                forms/serialsettingswidget.ui 
                forms/tcpipsettingswidget.ui
+	           forms/ipaddressctrl.ui
   )
 
 QT4_WRAP_CPP(qmodbus_MOC_out ${qmodbus_INCLUDES})

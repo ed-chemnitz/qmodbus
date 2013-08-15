@@ -3,78 +3,78 @@
 #include "modbus-tcp.h"
 #include <QIntValidator>
 #include <QMessageBox>
+#include <QDebug>
 
 TcpIpSettingsWidget::TcpIpSettingsWidget(QWidget *parent) :
-	QWidget(parent),
-	ui(new Ui::TcpIpSettingsWidget)
+    QWidget(parent),
+    ui(new Ui::TcpIpSettingsWidget)
 ,   m_tcpModbus(0)
 {
-	ui->setupUi(this);
-	ui->edPort->setValidator(new QIntValidator(this));
-	ui->edPort->setInputMask("00000");
-	ui->edNetworkAddress->setInputMask("000.000.000.000");
-	ui->edNetworkAddress->setValidator(&m_validator);
-	enableGuiItems(false);
+    ui->setupUi(this);
+    connect(ui->edNetworkAddress, SIGNAL(textChanged(QString)), this, SLOT(onEdNetworkAddressTextChanged(QString)));
+    ui->edPort->setValidator(new QIntValidator(this));
+    enableGuiItems(false);
 }
 
 TcpIpSettingsWidget::~TcpIpSettingsWidget()
 {
-	delete ui;
+    delete ui;
 }
 
 int TcpIpSettingsWidget::setupModbusPort()
 {
-	return 0;
+    return 0;
 }
 
 void TcpIpSettingsWidget::changeModbusInterface(const QString &address, int portNbr)
 {
-	releaseTcpModbus();
+    releaseTcpModbus();
 
-	m_tcpModbus = modbus_new_tcp( address.toAscii().constData(), portNbr );
-	if( modbus_connect( m_tcpModbus ) == -1 )
-	{
-		QMessageBox::critical( this, tr( "Connection failed" ),
-			tr( "Could not connect tcp/ip port!" ) );
-	}
+    m_tcpModbus = modbus_new_tcp( address.toAscii().constData(), portNbr );
+    if( modbus_connect( m_tcpModbus ) == -1 )
+    {
+        QMessageBox::critical( this, tr( "Connection failed" ),
+            tr( "Could not connect tcp/ip port!" ) );
+        ui->btnApply->setEnabled(true);
+    }
 }
 
 void TcpIpSettingsWidget::releaseTcpModbus()
 {
-	if( m_tcpModbus )
-	{
-		modbus_close( m_tcpModbus );
-		modbus_free( m_tcpModbus );
-		m_tcpModbus = NULL;
-	}
+    if( m_tcpModbus )
+    {
+        modbus_close( m_tcpModbus );
+        modbus_free( m_tcpModbus );
+        m_tcpModbus = NULL;
+    }
 }
 
 void TcpIpSettingsWidget::enableGuiItems(bool checked)
 {
-	ui->edPort->setEnabled(checked);
-	ui->edNetworkAddress->setEnabled(checked);
+    ui->edPort->setEnabled(checked);
+    ui->edNetworkAddress->setEnabled(checked);
 }
 
 
 void TcpIpSettingsWidget::on_cbEnabled_clicked(bool checked)
 {
-	enableGuiItems(checked);
+    enableGuiItems(checked);
 }
 
 void TcpIpSettingsWidget::on_btnApply_clicked()
 {
-	int portNbr = ui->edPort->text().toInt();
-	changeModbusInterface(ui->edNetworkAddress->text(), portNbr);
-	ui->btnApply->setEnabled(false);
-	emit tcpPortActive(ui->cbEnabled->isChecked());
+    int portNbr = ui->edPort->text().toInt();
+    ui->btnApply->setEnabled(false);
+    changeModbusInterface(ui->edNetworkAddress->text(), portNbr);
+    emit tcpPortActive(ui->cbEnabled->isChecked());
 }
 
-void TcpIpSettingsWidget::on_edNetworkAddress_textChanged(const QString &)
+void TcpIpSettingsWidget::onEdNetworkAddressTextChanged(const QString &)
 {
-	ui->btnApply->setEnabled(true);
+    ui->btnApply->setEnabled(true);
 }
 
 void TcpIpSettingsWidget::on_edPort_textChanged(const QString &)
 {
-	ui->btnApply->setEnabled(true);
+    ui->btnApply->setEnabled(true);
 }

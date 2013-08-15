@@ -34,13 +34,13 @@
 class AboutDialog : public QDialog, public Ui::AboutDialog
 {
 public:
-	AboutDialog( QWidget * _parent ) :
-		QDialog( _parent )
-	{
-		setupUi( this );
-		aboutTextLabel->setText(
-			aboutTextLabel->text().arg( "0.2.1" ) );
-	}
+    AboutDialog( QWidget * _parent ) :
+        QDialog( _parent )
+    {
+        setupUi( this );
+        aboutTextLabel->setText(
+            aboutTextLabel->text().arg( "0.3.0" ) );
+    }
 } ;
 
 
@@ -52,39 +52,39 @@ namespace Ui
 
 class MainWindow : public QMainWindow
 {
-	Q_OBJECT
+    Q_OBJECT
 public:
-	MainWindow( QWidget * parent = 0 );
-	~MainWindow();
+    MainWindow( QWidget * parent = 0 );
+    ~MainWindow();
 
-	void busMonitorAddItem( bool isRequest,
-				uint8_t slave,
-				uint8_t func,
-				uint16_t addr,
-				uint16_t nb,
-				uint16_t expectedCRC,
-				uint16_t actualCRC );
-	void busMonitorRawData( uint8_t * data, uint8_t dataLen, bool addNewline );
+    void busMonitorAddItem( bool isRequest,
+                uint8_t slave,
+                uint8_t func,
+                uint16_t addr,
+                uint16_t nb,
+                uint16_t expectedCRC,
+                uint16_t actualCRC );
+    void busMonitorRawData( uint8_t * data, uint8_t dataLen, bool addNewline );
 
 
 private slots:
-	void clearBusMonTable( void );
-	void updateRequestPreview( void );
-	void updateRegisterView( void );
-	void enableHexView( void );
-	void sendModbusRequest( void );
-	void resetStatus( void );
-	void pollForDataOnBus( void );
-	void openBatchProcessor();
-	void aboutQModBus( void );
-	void onSerialPortActive(bool active);
-	void onTcpPortActive(bool active);
+    void clearBusMonTable( void );
+    void updateRequestPreview( void );
+    void updateRegisterView( void );
+    void enableHexView( void );
+    void sendModbusRequest( void );
+    void resetStatus( void );
+    void pollForDataOnBus( void );
+    void openBatchProcessor();
+    void aboutQModBus( void );
+    void onSerialPortActive(bool active);
+    void onTcpPortActive(bool active);
 
 private:
-	Ui::MainWindowClass * ui;
-	modbus_t * m_modbus;
-	QWidget * m_statusInd;
-	QLabel * m_statusText;
+    Ui::MainWindowClass * ui;
+    modbus_t * m_modbus;
+    QWidget * m_statusInd;
+    QLabel * m_statusText;
 
 };
 

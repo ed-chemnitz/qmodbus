@@ -3,7 +3,6 @@
 
 #include <QWidget>
 #include "imodbus.h"
-#include "ip4validator.h"
 
 namespace Ui {
 class TcpIpSettingsWidget;
@@ -11,34 +10,32 @@ class TcpIpSettingsWidget;
 
 class TcpIpSettingsWidget : public QWidget, public IModbus
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	TcpIpSettingsWidget(QWidget *parent = 0);
-	~TcpIpSettingsWidget();
-	// IModbus interface
-	virtual modbus_t *modbus() { return m_tcpModbus; }
-	virtual int setupModbusPort();
+    TcpIpSettingsWidget(QWidget *parent = 0);
+    ~TcpIpSettingsWidget();
+    // IModbus interface
+    virtual modbus_t *modbus() { return m_tcpModbus; }
+    virtual int setupModbusPort();
 
 protected:
-	void changeModbusInterface(const QString& address, int portNbr);
-	void releaseTcpModbus();
-	void enableGuiItems(bool checked);
+    void changeModbusInterface(const QString& address, int portNbr);
+    void releaseTcpModbus();
+    void enableGuiItems(bool checked);
 
 private slots:
-	void on_cbEnabled_clicked(bool checked);
-	void on_btnApply_clicked();
-	void on_edNetworkAddress_textChanged(const QString &arg1);
-	void on_edPort_textChanged(const QString &arg1);
+    void on_cbEnabled_clicked(bool checked);
+    void on_btnApply_clicked();
+    void onEdNetworkAddressTextChanged(const QString &arg1);
+    void on_edPort_textChanged(const QString &arg1);
 
 signals:
-	void tcpPortActive(bool val);
+    void tcpPortActive(bool val);
 
 private:
-	Ui::TcpIpSettingsWidget *ui;
-	modbus_t *               m_tcpModbus;
-	IP4Validator             m_validator;
-
+    Ui::TcpIpSettingsWidget *ui;
+    modbus_t *               m_tcpModbus;
 };
 
 #endif // TCPIPSETTINGSWIDGET_H

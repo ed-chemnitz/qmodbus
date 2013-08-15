@@ -2,7 +2,7 @@ lmmsicon ICON data/qmodbus.ico
 #include <windows.h>
 
 VS_VERSION_INFO	VERSIONINFO
-  FILEVERSION	0,2,0,0
+  FILEVERSION	0,3,0,0
   FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
   FILEOS	VOS_NT_WINDOWS32
   FILETYPE	VFT_APP
@@ -13,13 +13,13 @@ BEGIN
     BLOCK "040904E4"
     //language ID = U.S. English, charset = Windows, Multilingual
     BEGIN
-      VALUE "Comments",		"QModBusTCP (http://qmodbus.sourceforge.net)\0"
-      VALUE "CompanyName",	"ing-büro reichel-langer\0"
-      VALUE "FileDescription",	"QModBusTCP\0"
+      VALUE "Comments",		"QModBus (http://qmodbus.sourceforge.net)\0"
+      VALUE "CompanyName",	"EDC Electronic Design Chemnitz GmbH\ning-büro reichel-langer\0"
+      VALUE "FileDescription",	"QModBus\0"
       VALUE "FileVersion",	"@VERSION@\0"
-      VALUE "LegalCopyright",	"Copyright (c) 2013 Karl-Heinz Reichel / ing-büro reichel-langer\nCopyright (c) 2009-2011 Tobias Doerffel / EDC Electronic Design Chemnitz GmbH\0"
-      VALUE "OriginalFilename",	"qmodbustcp.exe\0"
-      VALUE "ProductName",	"QModBusTcp\0"
+      VALUE "LegalCopyright",	"Copyright (c) 2009-2011 Tobias Doerffel / EDC Electronic Design Chemnitz GmbH\nCopyright (c) 2013 Karl-Heinz Reichel / ing-büro reichel-langer\nCopyright (c) 2009-2011 Tobias Doerffel / EDC Electronic Design Chemnitz GmbH\0"
+      VALUE "OriginalFilename",	"qmodbus.exe\0"
+      VALUE "ProductName",	"QModBus\0"
       VALUE "ProductVersion",	"@VERSION@\0"
     END
   END

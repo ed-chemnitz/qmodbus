@@ -6,8 +6,8 @@ Copyright (c) 2009-2011 Tobias Doerffel, EDC Electronic Design Chemnitz GmbH
 http://www.techdrivers.de
 http://www.ed-chemnitz.de
 
+http://qmodbus.sourceforge.net
 
-https://bitbucket.org/khreichel/qmodbustcp
 
 This program is free software; you can redistribute it and/or modify 
 it under the terms of the GNU General Public License as published by the
@@ -23,9 +23,7 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-What is QModBusTcp?
-QModBusTcp is the extension of QModBus application to support also the
-modbus/tcp protocol.
+
 
 What is QModBus?
 ----------------
@@ -39,6 +37,7 @@ traffic on the bus.
 
 Requirements
 ------------
+
 * Qt4
 * GCC
 
@@ -46,11 +45,14 @@ Requirements
 
 Building
 --------
-See INSTALL for information on how to build QModBusTcp.
+
+See INSTALL for information on how to build QModBus.
+
 
 
 Contact
 -------
 
 Any suggestions, patches etc. are welcome. Simply send a mail to
-kh.reichel@techdrivers.de.
+tobias.doerffel (at) gmail (dot) com or
+kh.reichel@techdrives.de.
