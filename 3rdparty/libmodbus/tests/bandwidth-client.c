@@ -16,21 +16,31 @@
  */
 
 #include <stdio.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#include <sys/time.h>
+#endif
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
-#include <sys/time.h>
 #include <errno.h>
 
 #include <modbus.h>
 
 #define G_MSEC_PER_SEC 1000
 
-uint32_t gettime_ms(void)
+static uint32_t gettime_ms(void)
 {
     struct timeval tv;
+#if !defined(_MSC_VER)
     gettimeofday (&tv, NULL);
+#else
+    SYSTEMTIME st;
+
+    GetLocalTime(&st);
+    tv.tv_sec = st.wSecond;
+    tv.tv_usec = st.wMilliseconds * 1000;
+#endif
 
     return (uint32_t) tv.tv_sec * 1000 + tv.tv_usec / 1000;
 }
@@ -169,9 +179,9 @@ int main(int argc, char *argv[])
     printf("* %d KiB/s\n", rate);
     printf("\n\n");
 
-    printf("READ AND WRITE REGISTERS\n\n");
+    printf("WRITE AND READ REGISTERS\n\n");
 
-    nb_points = MODBUS_MAX_RW_WRITE_REGISTERS;
+    nb_points = MODBUS_MAX_WR_WRITE_REGISTERS;
     start = gettime_ms();
     for (i=0; i<n_loop; i++) {
         rc = modbus_write_and_read_registers(ctx,

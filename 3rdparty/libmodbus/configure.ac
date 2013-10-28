@@ -12,7 +12,7 @@
 # http://www.gnu.org/software/libtool/manual/html_node/Libtool-versioning.html
 #
 m4_define([libmodbus_version_major], [3])
-m4_define([libmodbus_version_minor], [0])
+m4_define([libmodbus_version_minor], [1])
 m4_define([libmodbus_version_micro], [1])
 
 m4_define([libmodbus_release_status],
@@ -22,12 +22,19 @@ m4_define([libmodbus_version],
     [libmodbus_version_major.libmodbus_version_minor.libmodbus_version_micro])
 
 AC_PREREQ([2.63])
-AC_INIT([libmodbus],[libmodbus_version],
-[https://github.com/stephane/libmodbus/issues])
-AC_CONFIG_HEADERS([config.h tests/unit-test.h])
-AM_INIT_AUTOMAKE([foreign])
-# enable nice build output on automake1.11
-m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
+AC_INIT([libmodbus],
+        [libmodbus_version],
+        [https://github.com/stephane/libmodbus/issues],
+        [libmodbus],
+        [http://libmodbus.org/])
+AC_CONFIG_SRCDIR([src/modbus.c])
+AC_CONFIG_AUX_DIR([build-aux])
+AM_INIT_AUTOMAKE([check-news foreign 1.11 -Wall -Wno-portability silent-rules tar-pax subdir-objects])
+AC_PROG_CC_STDC
+AC_USE_SYSTEM_EXTENSIONS
+AC_SYS_LARGEFILE
+AC_CONFIG_MACRO_DIR([m4])
+AM_SILENT_RULES([yes])
 
 LIBMODBUS_VERSION_MAJOR=libmodbus_version_major
 LIBMODBUS_VERSION_MINOR=libmodbus_version_minor
@@ -40,60 +47,50 @@ AC_SUBST(LIBMODBUS_VERSION)
 
 # ABI version
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
-LIBMODBUS_LD_CURRENT=5
+LIBMODBUS_LD_CURRENT=6
 LIBMODBUS_LD_REVISION=0
-LIBMODBUS_LD_AGE=0
+LIBMODBUS_LD_AGE=1
 LIBMODBUS_LT_VERSION_INFO=$LIBMODBUS_LD_CURRENT:$LIBMODBUS_LD_REVISION:$LIBMODBUS_LD_AGE
 AC_SUBST(LIBMODBUS_LT_VERSION_INFO)
 
 AC_CANONICAL_HOST
 
-# Check whether we are building for Win32
+# OS check
 os_win32="false"
+os_qnx="false"
 case "${host_os}" in
       *mingw32*)
-		os_win32="true"
-	;;
+    os_win32="true"
+  ;;
+      *nto-qnx*)
+    os_qnx="true"
+  ;;
 esac
 AM_CONDITIONAL(OS_WIN32, test "$os_win32" = "true")
+AM_CONDITIONAL(OS_QNX, test "$os_qnx" = "true")
 
-# Checks for programs.
-AC_PROG_CC
-AC_PROG_CXX
-AC_PROG_MAKE_SET
-LT_INIT([disable-static win32-dll])
+LT_INIT([disable-static win32-dll pic-only])
 AC_CHECK_HEADERS([ \
-    termios.h \
-    sys/time.h \
-    time.h \
-    unistd.h \
+    arpa/inet.h \
+    byteswap.h \
     errno.h \
-    limits.h \
     fcntl.h \
-    sys/types.h \
-    sys/socket.h \
-    sys/ioctl.h \
+    limits.h \
+    linux/serial.h \
+    netdb.h \
     netinet/in.h \
     netinet/tcp.h \
-    arpa/inet.h \
-    netdb.h \
-    linux/serial.h \
+    sys/ioctl.h \
+    sys/socket.h \
+    sys/time.h \
+    sys/types.h \
+    termios.h \
+    time.h \
+    unistd.h \
 ])
 
 # Check whether to build docs / install man pages
 AC_LIBMODBUS_CHECK_DOC_BUILD
-
-# Checks for header files.
-AC_HEADER_STDC
-
-# Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
-AC_TYPE_SIZE_T
-AC_HEADER_TIME
-# AC_TYPE_UINT*_T: not supported by autoconf-2.59 of CentOS 5.3
-# AC_TYPE_UINT16_T
-# AC_TYPE_UINT32_T
-# AC_TYPE_UINT8_T
 
 # Cygwin defines IPTOS_LOWDELAY but can't handle that flag so it's necessary to
 # workaround that problem and Cygwin doesn't define MSG_DONTWAIT.
@@ -102,21 +99,6 @@ AC_CHECK_DECLS([__CYGWIN__])
 # Checks for library functions.
 AC_FUNC_FORK
 AC_CHECK_FUNCS([accept4 getaddrinfo gettimeofday inet_ntoa memset select socket strerror strlcpy])
-
-# Add -Wall -Werror for GCC if not already there
-if test "x$GCC" = "xyes"; then
-  case " $CFLAGS " in
-  *[[\ \	]]-Wall[[\ \	]]*) ;;
-  *) CFLAGS="$CFLAGS -Wall" ;;
-  esac
-fi
-
-if test "x$GCC" = "xyes"; then
-  case " $CFLAGS " in
-  *[[\ \	]]-Werror[[\ \	]]*) ;;
-  *) CFLAGS="$CFLAGS -Werror" ;;
-  esac
-fi
 
 # Required for getaddrinfo (TCP PI - IPv6)
 AC_CHECK_HEADERS([winsock2.h], HAVE_WINSOCK2_H=yes)
@@ -130,13 +112,38 @@ AC_CHECK_DECLS([TIOCSRS485], [], [], [[#include <sys/ioctl.h>]])
 # Check for RTS flags
 AC_CHECK_DECLS([TIOCM_RTS], [], [], [[#include <sys/ioctl.h>]])
 
+# Wtype-limits is not supported by gcc 4.2 (default on recent Mac OS X)
+my_CFLAGS="-Wall \
+-Wmissing-declarations -Wmissing-prototypes \
+-Wnested-externs -Wpointer-arith \
+-Wpointer-arith -Wsign-compare -Wchar-subscripts \
+-Wstrict-prototypes -Wshadow \
+-Wformat-security"
+AC_SUBST([my_CFLAGS])
+
+AC_CONFIG_HEADERS([config.h tests/unit-test.h])
 AC_CONFIG_FILES([
         Makefile
         src/Makefile
         src/modbus-version.h
+        src/win32/modbus.dll.manifest
         doc/Makefile
         tests/Makefile
         libmodbus.pc
         libmodbus.spec
 ])
+
 AC_OUTPUT
+AC_MSG_RESULT([
+        $PACKAGE $VERSION
+        ===============
+
+        prefix:                 ${prefix}
+        sysconfdir:             ${sysconfdir}
+        libdir:                 ${libdir}
+        includedir:             ${includedir}
+
+        compiler:               ${CC}
+        cflags:                 ${CFLAGS}
+        ldflags:                ${LDFLAGS}
+])

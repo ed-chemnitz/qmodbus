@@ -16,7 +16,9 @@
  */
 
 #include <stdio.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <stdlib.h>
 #include <errno.h>
 
@@ -24,7 +26,7 @@
 
 int main(void)
 {
-    int socket;
+    int s = -1;
     modbus_t *ctx;
     modbus_mapping_t *mb_mapping;
 
@@ -39,8 +41,8 @@ int main(void)
         return -1;
     }
 
-    socket = modbus_tcp_listen(ctx, 1);
-    modbus_tcp_accept(ctx, &socket);
+    s = modbus_tcp_listen(ctx, 1);
+    modbus_tcp_accept(ctx, &s);
 
     for (;;) {
         uint8_t query[MODBUS_TCP_MAX_ADU_LENGTH];
@@ -58,6 +60,9 @@ int main(void)
 
     printf("Quit the loop: %s\n", modbus_strerror(errno));
 
+    if (s != -1) {
+        close(s);
+    }
     modbus_mapping_free(mb_mapping);
     modbus_close(ctx);
     modbus_free(ctx);

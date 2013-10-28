@@ -1,5 +1,5 @@
 /*
- * Copyright © 2010-2011 Stéphane Raimbault <stephane.raimbault@gmail.com>
+ * Copyright © 2010-2012 Stéphane Raimbault <stephane.raimbault@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,7 @@
 #else
 # include "stdint.h"
 # include <time.h>
+typedef int ssize_t;
 #endif
 #include <sys/types.h>
 #include <config.h>
@@ -61,12 +62,13 @@ MODBUS_BEGIN_DECLS
 #define _FC_WRITE_MULTIPLE_COILS      0x0F
 #define _FC_WRITE_MULTIPLE_REGISTERS  0x10
 #define _FC_REPORT_SLAVE_ID           0x11
+#define _FC_MASK_WRITE_REGISTER       0x16
 #define _FC_WRITE_AND_READ_REGISTERS  0x17
 
 typedef enum {
     _MODBUS_BACKEND_TYPE_RTU=0,
     _MODBUS_BACKEND_TYPE_TCP
-} modbus_bakend_type_t;
+} modbus_backend_type_t;
 
 /*
  *  ---------- Request     Indication ----------
@@ -110,6 +112,7 @@ typedef struct _modbus_backend {
     void (*close) (modbus_t *ctx);
     int (*flush) (modbus_t *ctx);
     int (*select) (modbus_t *ctx, fd_set *rset, struct timeval *tv, int msg_length);
+    void (*free) (modbus_t *ctx);
 } modbus_backend_t;
 
 struct _modbus {
