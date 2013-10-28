@@ -82,6 +82,13 @@ void SerialSettingsWidget::changeModbusInterface(const QString& port, char parit
 	}
 }
 
+
+static inline QString embracedString( const QString & s )
+{
+    return s.section( '(', 1 ).section( ')', 0, 0 );
+}
+
+
 void SerialSettingsWidget::changeSerialPort( int )
 {
 	const int iface = ui->serialPort->currentIndex();
