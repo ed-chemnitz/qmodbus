@@ -162,28 +162,28 @@ QString BatchProcessor::sendModbusRequest( int slaveID, int func, int addr )
 
 	switch( func )
 	{
-		case _FC_READ_COILS:
+		case MODBUS_FC_READ_COILS:
 			ret = modbus_read_bits( m_modbus, addr, num, dest );
 			break;
-		case _FC_READ_DISCRETE_INPUTS:
+		case MODBUS_FC_READ_DISCRETE_INPUTS:
 			ret = modbus_read_input_bits( m_modbus, addr, num, dest );
 			break;
-		case _FC_READ_HOLDING_REGISTERS:
+		case MODBUS_FC_READ_HOLDING_REGISTERS:
 			ret = modbus_read_registers( m_modbus, addr, num, dest16 );
 			is16Bit = true;
 			break;
-		case _FC_READ_INPUT_REGISTERS:
+		case MODBUS_FC_READ_INPUT_REGISTERS:
 			ret = modbus_read_input_registers( m_modbus, addr, num, dest16 );
 			is16Bit = true;
 			break;
-/*		case _FC_WRITE_SINGLE_COIL:
+/*		case MODBUS_FC_WRITE_SINGLE_COIL:
 			ret = modbus_write_bit( m_modbus, addr,
 					ui->regTable->item( 0, DataColumn )->
 						text().toInt(0, 0) ? 1 : 0 );
 			writeAccess = true;
 			num = 1;
 			break;
-		case _FC_WRITE_SINGLE_REGISTER:
+		case MODBUS_FC_WRITE_SINGLE_REGISTER:
 			ret = modbus_write_register( m_modbus, addr,
 					ui->regTable->item( 0, DataColumn )->
 						text().toInt(0, 0) );
@@ -191,7 +191,7 @@ QString BatchProcessor::sendModbusRequest( int slaveID, int func, int addr )
 			num = 1;
 			break;
 
-		case _FC_WRITE_MULTIPLE_COILS:
+		case MODBUS_FC_WRITE_MULTIPLE_COILS:
 		{
 			uint8_t * data = new uint8_t[num];
 			for( int i = 0; i < num; ++i )
@@ -204,7 +204,7 @@ QString BatchProcessor::sendModbusRequest( int slaveID, int func, int addr )
 			writeAccess = true;
 			break;
 		}
-		case _FC_WRITE_MULTIPLE_REGISTERS:
+		case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
 		{
 			uint16_t * data = new uint16_t[num];
 			for( int i = 0; i < num; ++i )
