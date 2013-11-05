@@ -104,6 +104,7 @@ void _error_print(modbus_t *ctx, const char *context)
 
 static void _sleep_response_timeout(modbus_t *ctx)
 {
+    /* Response timeout is always positive */
 #ifdef _WIN32
     /* usleep doesn't exist on Windows */
     Sleep((ctx->response_timeout.tv_sec * 1000) +
@@ -112,10 +113,10 @@ static void _sleep_response_timeout(modbus_t *ctx)
     /* usleep source code */
     struct timespec request, remaining;
     request.tv_sec = ctx->response_timeout.tv_sec;
-    request.tv_nsec = ((long int)ctx->response_timeout.tv_usec % 1000000)
-        * 1000;
-    while (nanosleep(&request, &remaining) == -1 && errno == EINTR)
+    request.tv_nsec = ((long int)ctx->response_timeout.tv_usec) * 1000;
+    while (nanosleep(&request, &remaining) == -1 && errno == EINTR) {
         request = remaining;
+    }
 #endif
 }
 
@@ -141,27 +142,27 @@ static unsigned int compute_response_length_from_request(modbus_t *ctx, uint8_t 
     const int offset = ctx->backend->header_length;
 
     switch (req[offset]) {
-    case _FC_READ_COILS:
-    case _FC_READ_DISCRETE_INPUTS: {
+    case MODBUS_FC_READ_COILS:
+    case MODBUS_FC_READ_DISCRETE_INPUTS: {
         /* Header + nb values (code from write_bits) */
         int nb = (req[offset + 3] << 8) | req[offset + 4];
         length = 2 + (nb / 8) + ((nb % 8) ? 1 : 0);
     }
         break;
-    case _FC_WRITE_AND_READ_REGISTERS:
-    case _FC_READ_HOLDING_REGISTERS:
-    case _FC_READ_INPUT_REGISTERS:
+    case MODBUS_FC_WRITE_AND_READ_REGISTERS:
+    case MODBUS_FC_READ_HOLDING_REGISTERS:
+    case MODBUS_FC_READ_INPUT_REGISTERS:
         /* Header + 2 * nb values */
         length = 2 + 2 * (req[offset + 3] << 8 | req[offset + 4]);
         break;
-    case _FC_READ_EXCEPTION_STATUS:
+    case MODBUS_FC_READ_EXCEPTION_STATUS:
         length = 3;
         break;
-    case _FC_REPORT_SLAVE_ID:
+    case MODBUS_FC_REPORT_SLAVE_ID:
         /* The response is device specific (the header provides the
            length) */
         return MSG_LENGTH_UNDEFINED;
-    case _FC_MASK_WRITE_REGISTER:
+    case MODBUS_FC_MASK_WRITE_REGISTER:
         length = 7;
         break;
     default:
@@ -262,29 +263,29 @@ static uint8_t compute_meta_length_after_function(int function,
     int length;
 
     if (msg_type == MSG_INDICATION) {
-        if (function <= _FC_WRITE_SINGLE_REGISTER) {
+        if (function <= MODBUS_FC_WRITE_SINGLE_REGISTER) {
             length = 4;
-        } else if (function == _FC_WRITE_MULTIPLE_COILS ||
-                   function == _FC_WRITE_MULTIPLE_REGISTERS) {
+        } else if (function == MODBUS_FC_WRITE_MULTIPLE_COILS ||
+                   function == MODBUS_FC_WRITE_MULTIPLE_REGISTERS) {
             length = 5;
-        } else if (function == _FC_MASK_WRITE_REGISTER) {
+        } else if (function == MODBUS_FC_MASK_WRITE_REGISTER) {
             length = 6;
-        } else if (function == _FC_WRITE_AND_READ_REGISTERS) {
+        } else if (function == MODBUS_FC_WRITE_AND_READ_REGISTERS) {
             length = 9;
         } else {
-            /* _FC_READ_EXCEPTION_STATUS, _FC_REPORT_SLAVE_ID */
+            /* MODBUS_FC_READ_EXCEPTION_STATUS, MODBUS_FC_REPORT_SLAVE_ID */
             length = 0;
         }
     } else {
         /* MSG_CONFIRMATION */
         switch (function) {
-        case _FC_WRITE_SINGLE_COIL:
-        case _FC_WRITE_SINGLE_REGISTER:
-        case _FC_WRITE_MULTIPLE_COILS:
-        case _FC_WRITE_MULTIPLE_REGISTERS:
+        case MODBUS_FC_WRITE_SINGLE_COIL:
+        case MODBUS_FC_WRITE_SINGLE_REGISTER:
+        case MODBUS_FC_WRITE_MULTIPLE_COILS:
+        case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
             length = 4;
             break;
-        case _FC_MASK_WRITE_REGISTER:
+        case MODBUS_FC_MASK_WRITE_REGISTER:
             length = 6;
             break;
         default:
@@ -304,11 +305,11 @@ static int compute_data_length_after_meta(modbus_t *ctx, uint8_t *msg,
 
     if (msg_type == MSG_INDICATION) {
         switch (function) {
-        case _FC_WRITE_MULTIPLE_COILS:
-        case _FC_WRITE_MULTIPLE_REGISTERS:
+        case MODBUS_FC_WRITE_MULTIPLE_COILS:
+        case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
             length = msg[ctx->backend->header_length + 5];
             break;
-        case _FC_WRITE_AND_READ_REGISTERS:
+        case MODBUS_FC_WRITE_AND_READ_REGISTERS:
             length = msg[ctx->backend->header_length + 9];
             break;
         default:
@@ -316,9 +317,9 @@ static int compute_data_length_after_meta(modbus_t *ctx, uint8_t *msg,
         }
     } else {
         /* MSG_CONFIRMATION */
-        if (function <= _FC_READ_INPUT_REGISTERS ||
-            function == _FC_REPORT_SLAVE_ID ||
-            function == _FC_WRITE_AND_READ_REGISTERS) {
+        if (function <= MODBUS_FC_READ_INPUT_REGISTERS ||
+            function == MODBUS_FC_REPORT_SLAVE_ID ||
+            function == MODBUS_FC_WRITE_AND_READ_REGISTERS) {
             length = msg[ctx->backend->header_length + 1];
         } else {
             length = 0;
@@ -426,8 +427,10 @@ int _modbus_receive_msg(modbus_t *ctx, uint8_t *msg, msg_type_t msg_type)
         }
 
 		// -- BEGIN QMODBUS MODIFICATION --
-		busMonitorRawData( msg + msg_length, rc, ( step == _STEP_DATA && length_to_read-rc == 0 ) ? 1 : 0 );
-		// -- END QMODBUS MODIFICATION --
+        if (ctx->monitor_raw_data) {
+		    ctx->monitor_raw_data(ctx, msg + msg_length, rc, ( step == _STEP_DATA && length_to_read-rc == 0 ) ? 1 : 0 );
+		    // -- END QMODBUS MODIFICATION --
+        }
 
         /* Display the hex code of each character received */
         if (ctx->debug) {
@@ -467,7 +470,7 @@ int _modbus_receive_msg(modbus_t *ctx, uint8_t *msg, msg_type_t msg_type)
             }
         }
 
-        if (length_to_read > 0 && ctx->byte_timeout.tv_sec != -1) {
+        if (length_to_read > 0 && ctx->byte_timeout.tv_sec >= 0 && ctx->byte_timeout.tv_usec >= 0) {
             /* If there is no character in the buffer, the allowed timeout
                interval between two consecutive bytes is defined by
                byte_timeout */
@@ -475,6 +478,8 @@ int _modbus_receive_msg(modbus_t *ctx, uint8_t *msg, msg_type_t msg_type)
             tv.tv_usec = ctx->byte_timeout.tv_usec;
             p_tv = &tv;
         }
+        /* else timeout isn't set again, the full response must be read before
+           expiration of response timeout (for CONFIRMATION only) */
     }
 
     if (ctx->debug)
@@ -522,10 +527,12 @@ static int check_confirmation(modbus_t *ctx, uint8_t *req,
 
 	// -- BEGIN QMODBUS MODIFICATION --
 	int s_crc = 0; // TODO
-	busMonitorAddItem( 1, req[0], req[1],
+    if (ctx->monitor_add_item) {
+	    ctx->monitor_add_item(ctx, 1, req[0], req[1],
 							( req[2] << 8 ) + req[3],
 							( req[4] << 8 ) + req[5],
 							s_crc, s_crc );
+    }
 	// -- END QMODBUS MODIFICATION --
 
     if (ctx->backend->pre_check_confirmation) {
@@ -588,8 +595,8 @@ static int check_confirmation(modbus_t *ctx, uint8_t *req,
 
         /* Check the number of values is corresponding to the request */
         switch (function) {
-        case _FC_READ_COILS:
-        case _FC_READ_DISCRETE_INPUTS:
+        case MODBUS_FC_READ_COILS:
+        case MODBUS_FC_READ_DISCRETE_INPUTS:
             /* Read functions, 8 values in a byte (nb
              * of values in the request and byte count in
              * the response. */
@@ -597,20 +604,20 @@ static int check_confirmation(modbus_t *ctx, uint8_t *req,
             req_nb_value = (req_nb_value / 8) + ((req_nb_value % 8) ? 1 : 0);
             rsp_nb_value = rsp[offset + 1];
             break;
-        case _FC_WRITE_AND_READ_REGISTERS:
-        case _FC_READ_HOLDING_REGISTERS:
-        case _FC_READ_INPUT_REGISTERS:
+        case MODBUS_FC_WRITE_AND_READ_REGISTERS:
+        case MODBUS_FC_READ_HOLDING_REGISTERS:
+        case MODBUS_FC_READ_INPUT_REGISTERS:
             /* Read functions 1 value = 2 bytes */
             req_nb_value = (req[offset + 3] << 8) + req[offset + 4];
             rsp_nb_value = (rsp[offset + 1] / 2);
             break;
-        case _FC_WRITE_MULTIPLE_COILS:
-        case _FC_WRITE_MULTIPLE_REGISTERS:
+        case MODBUS_FC_WRITE_MULTIPLE_COILS:
+        case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
             /* N Write functions */
             req_nb_value = (req[offset + 3] << 8) + req[offset + 4];
             rsp_nb_value = (rsp[offset + 3] << 8) | rsp[offset + 4];
             break;
-        case _FC_REPORT_SLAVE_ID:
+        case MODBUS_FC_REPORT_SLAVE_ID:
             /* Report slave ID (bytes received) */
             req_nb_value = rsp_nb_value = rsp[offset + 1];
             break;
@@ -622,30 +629,32 @@ static int check_confirmation(modbus_t *ctx, uint8_t *req,
 		num_items = rsp_nb_value;
 		switch (function)
 		{
-			case _FC_READ_COILS:
-			case _FC_READ_DISCRETE_INPUTS:
+			case MODBUS_FC_READ_COILS:
+			case MODBUS_FC_READ_DISCRETE_INPUTS:
 				num_items = rsp_nb_value*8;
 				break;
-			case _FC_WRITE_AND_READ_REGISTERS:
-			case _FC_READ_HOLDING_REGISTERS:
-			case _FC_READ_INPUT_REGISTERS:
+			case MODBUS_FC_WRITE_AND_READ_REGISTERS:
+			case MODBUS_FC_READ_HOLDING_REGISTERS:
+			case MODBUS_FC_READ_INPUT_REGISTERS:
 				num_items = rsp_nb_value/2;
 				break;
-			case _FC_WRITE_MULTIPLE_COILS:
-			case _FC_WRITE_MULTIPLE_REGISTERS:
+			case MODBUS_FC_WRITE_MULTIPLE_COILS:
+			case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
 				addr = (rsp[offset + 1] << 8) | rsp[offset + 2];
 				num_items = rsp_nb_value;
 				break;
 			default:
 				break;
 		}
-		busMonitorAddItem( 0, rsp[offset-1], rsp[offset+0],
+        if (ctx->monitor_add_item) {
+		    ctx->monitor_add_item(ctx, 0, rsp[offset-1], rsp[offset+0],
 						   addr, num_items,
 							ctx->last_crc_expected,
 							ctx->last_crc_received
 					//		( rsp[offset+req_nb_value+4] << 8 ) |
 					//			rsp[offset+req_nb_value+5]
-);
+            );
+        }
 
         if (req_nb_value == rsp_nb_value) {
             rc = rsp_nb_value;
@@ -749,7 +758,7 @@ int modbus_reply(modbus_t *ctx, const uint8_t *req,
     sft.t_id = ctx->backend->prepare_response_tid(req, &req_length);
 
     switch (function) {
-    case _FC_READ_COILS: {
+    case MODBUS_FC_READ_COILS: {
         int nb = (req[offset + 3] << 8) + req[offset + 4];
 
         if (nb < 1 || MODBUS_MAX_READ_BITS < nb) {
@@ -778,7 +787,7 @@ int modbus_reply(modbus_t *ctx, const uint8_t *req,
         }
     }
         break;
-    case _FC_READ_DISCRETE_INPUTS: {
+    case MODBUS_FC_READ_DISCRETE_INPUTS: {
         /* Similar to coil status (but too many arguments to use a
          * function) */
         int nb = (req[offset + 3] << 8) + req[offset + 4];
@@ -809,7 +818,7 @@ int modbus_reply(modbus_t *ctx, const uint8_t *req,
         }
     }
         break;
-    case _FC_READ_HOLDING_REGISTERS: {
+    case MODBUS_FC_READ_HOLDING_REGISTERS: {
         int nb = (req[offset + 3] << 8) + req[offset + 4];
 
         if (nb < 1 || MODBUS_MAX_READ_REGISTERS < nb) {
@@ -841,7 +850,7 @@ int modbus_reply(modbus_t *ctx, const uint8_t *req,
         }
     }
         break;
-    case _FC_READ_INPUT_REGISTERS: {
+    case MODBUS_FC_READ_INPUT_REGISTERS: {
         /* Similar to holding registers (but too many arguments to use a
          * function) */
         int nb = (req[offset + 3] << 8) + req[offset + 4];
@@ -875,7 +884,7 @@ int modbus_reply(modbus_t *ctx, const uint8_t *req,
         }
     }
         break;
-    case _FC_WRITE_SINGLE_COIL:
+    case MODBUS_FC_WRITE_SINGLE_COIL:
         if (address >= mb_mapping->nb_bits) {
             if (ctx->debug) {
                 fprintf(stderr,
@@ -904,7 +913,7 @@ int modbus_reply(modbus_t *ctx, const uint8_t *req,
             }
         }
         break;
-    case _FC_WRITE_SINGLE_REGISTER:
+    case MODBUS_FC_WRITE_SINGLE_REGISTER:
         if (address >= mb_mapping->nb_registers) {
             if (ctx->debug) {
                 fprintf(stderr, "Illegal data address %0X in write_register\n",
@@ -921,7 +930,7 @@ int modbus_reply(modbus_t *ctx, const uint8_t *req,
             rsp_length = req_length;
         }
         break;
-    case _FC_WRITE_MULTIPLE_COILS: {
+    case MODBUS_FC_WRITE_MULTIPLE_COILS: {
         int nb = (req[offset + 3] << 8) + req[offset + 4];
 
         if ((address + nb) > mb_mapping->nb_bits) {
@@ -943,7 +952,7 @@ int modbus_reply(modbus_t *ctx, const uint8_t *req,
         }
     }
         break;
-    case _FC_WRITE_MULTIPLE_REGISTERS: {
+    case MODBUS_FC_WRITE_MULTIPLE_REGISTERS: {
         int nb = (req[offset + 3] << 8) + req[offset + 4];
 
         if ((address + nb) > mb_mapping->nb_registers) {
@@ -969,7 +978,7 @@ int modbus_reply(modbus_t *ctx, const uint8_t *req,
         }
     }
         break;
-    case _FC_REPORT_SLAVE_ID: {
+    case MODBUS_FC_REPORT_SLAVE_ID: {
         int str_len;
         int byte_count_pos;
 
@@ -986,14 +995,14 @@ int modbus_reply(modbus_t *ctx, const uint8_t *req,
         rsp[byte_count_pos] = rsp_length - byte_count_pos - 1;
     }
         break;
-    case _FC_READ_EXCEPTION_STATUS:
+    case MODBUS_FC_READ_EXCEPTION_STATUS:
         if (ctx->debug) {
             fprintf(stderr, "FIXME Not implemented\n");
         }
         errno = ENOPROTOOPT;
         return -1;
         break;
-    case _FC_MASK_WRITE_REGISTER:
+    case MODBUS_FC_MASK_WRITE_REGISTER:
         if (address >= mb_mapping->nb_registers) {
             if (ctx->debug) {
                 fprintf(stderr, "Illegal data address %0X in write_register\n",
@@ -1013,7 +1022,7 @@ int modbus_reply(modbus_t *ctx, const uint8_t *req,
             rsp_length = req_length;
         }
         break;
-    case _FC_WRITE_AND_READ_REGISTERS: {
+    case MODBUS_FC_WRITE_AND_READ_REGISTERS: {
         int nb = (req[offset + 3] << 8) + req[offset + 4];
         uint16_t address_write = (req[offset + 5] << 8) + req[offset + 6];
         int nb_write = (req[offset + 7] << 8) + req[offset + 8];
@@ -1167,7 +1176,7 @@ int modbus_read_bits(modbus_t *ctx, int addr, int nb, uint8_t *dest)
         return -1;
     }
 
-    rc = read_io_status(ctx, _FC_READ_COILS, addr, nb, dest);
+    rc = read_io_status(ctx, MODBUS_FC_READ_COILS, addr, nb, dest);
 
     if (rc == -1)
         return -1;
@@ -1196,7 +1205,7 @@ int modbus_read_input_bits(modbus_t *ctx, int addr, int nb, uint8_t *dest)
         return -1;
     }
 
-    rc = read_io_status(ctx, _FC_READ_DISCRETE_INPUTS, addr, nb, dest);
+    rc = read_io_status(ctx, MODBUS_FC_READ_DISCRETE_INPUTS, addr, nb, dest);
 
     if (rc == -1)
         return -1;
@@ -1271,7 +1280,7 @@ int modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *dest)
         return -1;
     }
 
-    status = read_registers(ctx, _FC_READ_HOLDING_REGISTERS,
+    status = read_registers(ctx, MODBUS_FC_READ_HOLDING_REGISTERS,
                             addr, nb, dest);
     return status;
 }
@@ -1295,7 +1304,7 @@ int modbus_read_input_registers(modbus_t *ctx, int addr, int nb,
         return -1;
     }
 
-    status = read_registers(ctx, _FC_READ_INPUT_REGISTERS,
+    status = read_registers(ctx, MODBUS_FC_READ_INPUT_REGISTERS,
                             addr, nb, dest);
 
     return status;
@@ -1339,7 +1348,7 @@ int modbus_write_bit(modbus_t *ctx, int addr, int status)
         return -1;
     }
 
-    return write_single(ctx, _FC_WRITE_SINGLE_COIL, addr,
+    return write_single(ctx, MODBUS_FC_WRITE_SINGLE_COIL, addr,
                         status ? 0xFF00 : 0);
 }
 
@@ -1351,7 +1360,7 @@ int modbus_write_register(modbus_t *ctx, int addr, int value)
         return -1;
     }
 
-    return write_single(ctx, _FC_WRITE_SINGLE_REGISTER, addr, value);
+    return write_single(ctx, MODBUS_FC_WRITE_SINGLE_REGISTER, addr, value);
 }
 
 /* Write the bits of the array in the remote device */
@@ -1380,7 +1389,7 @@ int modbus_write_bits(modbus_t *ctx, int addr, int nb, const uint8_t *src)
     }
 
     req_length = ctx->backend->build_request_basis(ctx,
-                                                   _FC_WRITE_MULTIPLE_COILS,
+                                                   MODBUS_FC_WRITE_MULTIPLE_COILS,
                                                    addr, nb, req);
     byte_count = (nb / 8) + ((nb % 8) ? 1 : 0);
     req[req_length++] = byte_count;
@@ -1442,7 +1451,7 @@ int modbus_write_registers(modbus_t *ctx, int addr, int nb, const uint16_t *src)
     }
 
     req_length = ctx->backend->build_request_basis(ctx,
-                                                   _FC_WRITE_MULTIPLE_REGISTERS,
+                                                   MODBUS_FC_WRITE_MULTIPLE_REGISTERS,
                                                    addr, nb, req);
     byte_count = nb * 2;
     req[req_length++] = byte_count;
@@ -1472,7 +1481,9 @@ int modbus_mask_write_register(modbus_t *ctx, int addr, uint16_t and_mask, uint1
     int req_length;
     uint8_t req[_MIN_REQ_LENGTH];
 
-    req_length = ctx->backend->build_request_basis(ctx, _FC_MASK_WRITE_REGISTER, addr, 0, req);
+    req_length = ctx->backend->build_request_basis(ctx,
+                                                   MODBUS_FC_MASK_WRITE_REGISTER,
+                                                   addr, 0, req);
 
     /* HACKISH, count is not used */
     req_length -=2;
@@ -1500,8 +1511,10 @@ int modbus_mask_write_register(modbus_t *ctx, int addr, uint16_t and_mask, uint1
 /* Write multiple registers from src array to remote device and read multiple
    registers from remote device to dest array. */
 int modbus_write_and_read_registers(modbus_t *ctx,
-                                    int write_addr, int write_nb, const uint16_t *src,
-                                    int read_addr, int read_nb, uint16_t *dest)
+                                    int write_addr, int write_nb,
+                                    const uint16_t *src,
+                                    int read_addr, int read_nb,
+                                    uint16_t *dest)
 
 {
     int rc;
@@ -1536,7 +1549,7 @@ int modbus_write_and_read_registers(modbus_t *ctx,
         return -1;
     }
     req_length = ctx->backend->build_request_basis(ctx,
-                                                   _FC_WRITE_AND_READ_REGISTERS,
+                                                   MODBUS_FC_WRITE_AND_READ_REGISTERS,
                                                    read_addr, read_nb, req);
 
     req[req_length++] = write_addr >> 8;
@@ -1587,7 +1600,7 @@ int modbus_report_slave_id(modbus_t *ctx, uint8_t *dest)
         return -1;
     }
 
-    req_length = ctx->backend->build_request_basis(ctx, _FC_REPORT_SLAVE_ID,
+    req_length = ctx->backend->build_request_basis(ctx, MODBUS_FC_REPORT_SLAVE_ID,
                                                    0, 0, req);
 
     /* HACKISH, addr and count are not used */
@@ -1633,6 +1646,9 @@ void _modbus_init_common(modbus_t *ctx)
 
     ctx->byte_timeout.tv_sec = 0;
     ctx->byte_timeout.tv_usec = _BYTE_TIMEOUT;
+
+    ctx->monitor_add_item = NULL;
+    ctx->monitor_raw_data = NULL;
 }
 
 /* Define the slave number */
@@ -1681,48 +1697,54 @@ int modbus_get_socket(modbus_t *ctx)
 }
 
 /* Get the timeout interval used to wait for a response */
-int modbus_get_response_timeout(modbus_t *ctx, struct timeval *timeout)
+int modbus_get_response_timeout(modbus_t *ctx, long *to_sec, long *to_usec)
 {
     if (ctx == NULL) {
         errno = EINVAL;
         return -1;
     }
 
-    *timeout = ctx->response_timeout;
+    *to_sec = ctx->response_timeout.tv_sec;
+    *to_usec = ctx->response_timeout.tv_usec;
     return 0;
 }
 
-int modbus_set_response_timeout(modbus_t *ctx, const struct timeval *timeout)
+int modbus_set_response_timeout(modbus_t *ctx, long to_sec, long to_usec)
 {
-    if (ctx == NULL) {
+    if (ctx == NULL ||
+        to_sec < 0 || to_usec < 0 || to_usec > 999999) {
         errno = EINVAL;
         return -1;
     }
 
-    ctx->response_timeout = *timeout;
+    ctx->response_timeout.tv_sec = to_sec;
+    ctx->response_timeout.tv_usec = to_usec;
     return 0;
 }
 
 /* Get the timeout interval between two consecutive bytes of a message */
-int modbus_get_byte_timeout(modbus_t *ctx, struct timeval *timeout)
+int modbus_get_byte_timeout(modbus_t *ctx, long *to_sec, long *to_usec)
 {
     if (ctx == NULL) {
         errno = EINVAL;
         return -1;
     }
 
-    *timeout = ctx->byte_timeout;
+    *to_sec = ctx->byte_timeout.tv_sec;
+    *to_usec = ctx->byte_timeout.tv_usec;
     return 0;
 }
 
-int modbus_set_byte_timeout(modbus_t *ctx, const struct timeval *timeout)
+int modbus_set_byte_timeout(modbus_t *ctx, long to_sec, long to_usec)
 {
-    if (ctx == NULL) {
+    /* Byte timeout can be disabled with negative values */
+    if (ctx == NULL || to_usec > 999999) {
         errno = EINVAL;
         return -1;
     }
 
-    ctx->byte_timeout = *timeout;
+    ctx->byte_timeout.tv_sec = to_sec;
+    ctx->byte_timeout.tv_usec = to_usec;
     return 0;
 }
 
@@ -1909,20 +1931,26 @@ size_t strlcpy(char *dest, const char *src, size_t dest_size)
 #endif
 
 
+void modbus_register_monitor_add_item_fnc(modbus_t *ctx,
+                                         modbus_monitor_add_item_fnc_t cb) 
+{
+    ctx->monitor_add_item = cb; 
+}
 
+void modbus_register_monitor_raw_data_fnc(modbus_t *ctx,
+                                         modbus_monitor_raw_data_fnc_t cb) 
+{
+    ctx->monitor_raw_data = cb; 
+} 
 
 void modbus_poll(modbus_t* ctx)
 {
 	uint8_t msg[MAX_MESSAGE_LENGTH];
 	uint8_t msg_len = 0;
 
-    struct timeval tv;
-	tv.tv_sec = 0;
-	tv.tv_usec = 500;
-	modbus_set_response_timeout( ctx, &tv );
+	modbus_set_response_timeout( ctx, 0, 500);
 	const int ret = _modbus_receive_msg( ctx, &msg_len, MSG_CONFIRMATION );	/* wait for 0.5 ms */
-	tv.tv_usec = _RESPONSE_TIMEOUT;
-	modbus_set_response_timeout( ctx, &tv );
+	modbus_set_response_timeout( ctx, 0, _RESPONSE_TIMEOUT);
 	if( ( ret < 0 && msg_len > 0 ) || ret >= 0 )
 	{
 		const int o = ctx->backend->header_length;
@@ -1934,33 +1962,33 @@ void modbus_poll(modbus_t* ctx)
 		int isQuery = 1;
 		switch( func )
 		{
-			case _FC_READ_COILS:
-			case _FC_READ_DISCRETE_INPUTS:
+			case MODBUS_FC_READ_COILS:
+			case MODBUS_FC_READ_DISCRETE_INPUTS:
 				if( msg[o+2] == datalen-1 )
 				{
 					isQuery = 0;
 					nb = (datalen-1) * 8;
 				}
 				break;
-			case _FC_READ_HOLDING_REGISTERS:
-			case _FC_READ_INPUT_REGISTERS:
+			case MODBUS_FC_READ_HOLDING_REGISTERS:
+			case MODBUS_FC_READ_INPUT_REGISTERS:
 				if( msg[o+2] == datalen-1 )
 				{
 					isQuery = 0;
 					nb = (datalen-1) / 2;
 				}
 				break;
-			case _FC_WRITE_SINGLE_COIL:
-			case _FC_WRITE_SINGLE_REGISTER:
+			case MODBUS_FC_WRITE_SINGLE_COIL:
+			case MODBUS_FC_WRITE_SINGLE_REGISTER:
 				/* can't decide from message whether it is a query or response */
 				isQuery = 0;
 				nb = 1;
 				addr = ( msg[o+2] << 8 ) | msg[o+3];
 				break;
-			case _FC_REPORT_SLAVE_ID:
+			case MODBUS_FC_REPORT_SLAVE_ID:
 				nb = 0;
-			case _FC_WRITE_MULTIPLE_REGISTERS:
-			case _FC_WRITE_MULTIPLE_COILS:
+			case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
+			case MODBUS_FC_WRITE_MULTIPLE_COILS:
 			default:
 				/* can't decide from message whether it is a query or response */
 				isQuery = 0;
@@ -1971,7 +1999,8 @@ void modbus_poll(modbus_t* ctx)
 			addr = ( msg[o+2] << 8 ) | msg[o+3];
 			nb = ( msg[o+4] << 8 ) | msg[o+5];
 		}
-		busMonitorAddItem( isQuery,				/* is query */
+        if (ctx->monitor_add_item) {
+		    ctx->monitor_add_item(ctx, isQuery,				/* is query */
 					slave,				/* slave */
 					func,				/* func */
 					addr,				/* addr */
@@ -1980,6 +2009,7 @@ void modbus_poll(modbus_t* ctx)
 					ctx->last_crc_received
 					//( msg[msg_len-2] << 8 ) | msg[msg_len-1]	/* CRC */
 				);
+        }
 	}
 }
 

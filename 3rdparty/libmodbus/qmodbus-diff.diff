@@ -1,12 +1,6 @@
-Nur in /home/toby/h/qmodbus/3rdparty/libmodbus/: AUTHORS.
-Nur in /home/toby/h/qmodbus/3rdparty/libmodbus/: config.h.
-Nur in /home/toby/h/qmodbus/3rdparty/libmodbus/: COPYING.
-Nur in /home/toby/h/qmodbus/3rdparty/libmodbus/: COPYING.LESSER.
-Nur in src/: Makefile.am.
-Nur in /home/toby/h/qmodbus/3rdparty/libmodbus/: MIGRATION.
-diff -upr src//modbus.c /home/toby/h/qmodbus/3rdparty/libmodbus//modbus.c
---- src//modbus.c	2011-02-24 10:36:59.285493218 +0100
-+++ /home/toby/h/qmodbus/3rdparty/libmodbus//modbus.c	2010-10-05 14:57:44.000000000 +0200
+diff --git a/src/modbus.c b/src/modbus.c
+--- a/src/modbus.c	2011-02-24 10:36:59.285493218 +0100
++++ b/src/modbus.c	2010-10-05 14:57:44.000000000 +0200
 @@ -273,11 +273,9 @@ static int receive_msg(modbus_t *ctx, in
      FD_ZERO(&rfds);
      FD_SET(ctx->s, &rfds);
@@ -174,9 +168,9 @@ diff -upr src//modbus.c /home/toby/h/qmodbus/3rdparty/libmodbus//modbus.c
 +	}
 +}
 +
-diff -upr src//modbus.h /home/toby/h/qmodbus/3rdparty/libmodbus//modbus.h
---- src//modbus.h	2011-02-24 10:36:59.285493218 +0100
-+++ /home/toby/h/qmodbus/3rdparty/libmodbus//modbus.h	2010-10-05 14:51:56.000000000 +0200
+diff --git a/src/modbus.h b/src/modbus.h
+--- a/src/modbus.h	2011-02-24 10:36:59.285493218 +0100
++++ b/src/modbus.h	2010-10-05 14:51:56.000000000 +0200
 @@ -37,6 +37,7 @@
  #include <sys/param.h>
  #endif
@@ -204,9 +198,9 @@ diff -upr src//modbus.h /home/toby/h/qmodbus/3rdparty/libmodbus//modbus.h
  MODBUS_END_DECLS
  
  #endif  /* _MODBUS_H_ */
-diff -upr src//modbus-private.h /home/toby/h/qmodbus/3rdparty/libmodbus//modbus-private.h
---- src//modbus-private.h	2011-02-24 10:36:59.275493345 +0100
-+++ /home/toby/h/qmodbus/3rdparty/libmodbus//modbus-private.h	2010-10-05 14:50:09.000000000 +0200
+diff --git a/src//modbus-private.h b/src//modbus-private.h
+--- a/src/modbus-private.h	2011-02-24 10:36:59.275493345 +0100
++++ b/src/modbus-private.h	2010-10-05 14:50:09.000000000 +0200
 @@ -98,6 +98,8 @@ struct _modbus {
      int error_recovery;
      struct timeval timeout_begin;
@@ -216,9 +210,9 @@ diff -upr src//modbus-private.h /home/toby/h/qmodbus/3rdparty/libmodbus//modbus-
      const modbus_backend_t *backend;
      void *backend_data;
  };
-diff -upr src//modbus-rtu.c /home/toby/h/qmodbus/3rdparty/libmodbus//modbus-rtu.c
---- src//modbus-rtu.c	2011-02-24 10:36:59.275493345 +0100
-+++ /home/toby/h/qmodbus/3rdparty/libmodbus//modbus-rtu.c	2010-10-05 14:59:12.000000000 +0200
+diff --git a/src//modbus-rtu.c b/src//modbus-rtu.c
+--- a/src/modbus-rtu.c	2011-02-24 10:36:59.275493345 +0100
++++ b/src/modbus-rtu.c	2010-10-05 14:59:12.000000000 +0200
 @@ -261,6 +261,9 @@ int _modbus_rtu_check_integrity(modbus_t
      crc_calculated = crc16(msg, msg_length - 2);
      crc_received = (msg[msg_length - 2] << 8) | msg[msg_length - 1];

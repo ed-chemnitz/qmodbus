@@ -51,23 +51,10 @@ MODBUS_BEGIN_DECLS
 #define _RESPONSE_TIMEOUT    500000
 #define _BYTE_TIMEOUT        500000
 
-/* Function codes */
-#define _FC_READ_COILS                0x01
-#define _FC_READ_DISCRETE_INPUTS      0x02
-#define _FC_READ_HOLDING_REGISTERS    0x03
-#define _FC_READ_INPUT_REGISTERS      0x04
-#define _FC_WRITE_SINGLE_COIL         0x05
-#define _FC_WRITE_SINGLE_REGISTER     0x06
-#define _FC_READ_EXCEPTION_STATUS     0x07
-#define _FC_WRITE_MULTIPLE_COILS      0x0F
-#define _FC_WRITE_MULTIPLE_REGISTERS  0x10
-#define _FC_REPORT_SLAVE_ID           0x11
-#define _FC_MASK_WRITE_REGISTER       0x16
-#define _FC_WRITE_AND_READ_REGISTERS  0x17
-
 typedef enum {
     _MODBUS_BACKEND_TYPE_RTU=0,
-    _MODBUS_BACKEND_TYPE_TCP
+    _MODBUS_BACKEND_TYPE_TCP, 
+    _MODBUS_BACKEND_TYPE_ASCII
 } modbus_backend_type_t;
 
 /*
@@ -128,6 +115,8 @@ struct _modbus {
 	uint16_t last_crc_received;
     const modbus_backend_t *backend;
     void *backend_data;
+    modbus_monitor_add_item_fnc_t monitor_add_item;
+    modbus_monitor_raw_data_fnc_t monitor_raw_data;
 };
 
 void _modbus_init_common(modbus_t *ctx);
