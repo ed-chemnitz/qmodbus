@@ -179,6 +179,19 @@ void MainWindow::busMonitorRawData( uint8_t * data, uint8_t dataLen, bool addNew
 	}
 }
 
+// static
+void MainWindow::stBusMonitorAddItem( modbus_t * modbus, uint8_t isRequest, uint8_t slave, uint8_t func, uint16_t addr, uint16_t nb, uint16_t expectedCRC, uint16_t actualCRC )
+{
+    Q_UNUSED(modbus);
+    globalMainWin->busMonitorAddItem( isRequest, slave, func, addr, nb, expectedCRC, actualCRC );
+}
+
+// static
+void MainWindow::stBusMonitorRawData( modbus_t * modbus, uint8_t * data, uint8_t dataLen, uint8_t addNewline )
+{
+    Q_UNUSED(modbus);
+    globalMainWin->busMonitorRawData( data, dataLen, addNewline != 0 );
+}
 
 static QString descriptiveDataTypeName( int funcCode )
 {
@@ -500,6 +513,8 @@ void MainWindow::onSerialPortActive(bool active)
 {
 	if (active) {
 		m_modbus = ui->serialSettingsWidget->modbus();
+		modbus_register_monitor_add_item_fnc(m_modbus, MainWindow::stBusMonitorAddItem);
+		modbus_register_monitor_raw_data_fnc(m_modbus, MainWindow::stBusMonitorRawData);
 	}
 	else {
 		m_modbus = NULL;
@@ -510,6 +525,8 @@ void MainWindow::onTcpPortActive(bool active)
 {
 	if (active) {
 		m_modbus = ui->tcpSettingsWidget->modbus();
+        modbus_register_monitor_add_item_fnc(m_modbus, MainWindow::stBusMonitorAddItem);
+        modbus_register_monitor_raw_data_fnc(m_modbus, MainWindow::stBusMonitorRawData);
 	}
 	else {
 		m_modbus = NULL;
@@ -517,17 +534,3 @@ void MainWindow::onTcpPortActive(bool active)
 }
 
 
-
-extern "C" {
-
-void busMonitorAddItem( uint8_t isRequest, uint8_t slave, uint8_t func, uint16_t addr, uint16_t nb, uint16_t expectedCRC, uint16_t actualCRC )
-{
-	globalMainWin->busMonitorAddItem( isRequest, slave, func, addr, nb, expectedCRC, actualCRC );
-}
-
-void busMonitorRawData( uint8_t * data, uint8_t dataLen, uint8_t addNewline )
-{
-	globalMainWin->busMonitorRawData( data, dataLen, addNewline != 0 );
-}
-
-}
