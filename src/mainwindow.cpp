@@ -52,7 +52,8 @@ MainWindow::MainWindow( QWidget * _parent ) :
 {
 	ui->setupUi(this);
 
-	connect( ui->serialSettingsWidget, SIGNAL(serialPortActive(bool)), this , SLOT(onSerialPortActive(bool)));
+	connect( ui->rtuSettingsWidget, SIGNAL(serialPortActive(bool)), this , SLOT(onRtuPortActive(bool)));
+    connect( ui->asciiSettingsWidget, SIGNAL(serialPortActive(bool)), this , SLOT(onAsciiPortActive(bool)));
 	connect( ui->tcpSettingsWidget,   SIGNAL(tcpPortActive(bool)), this, SLOT(onTcpPortActive(bool)));
 	connect( ui->slaveID, SIGNAL( valueChanged( int ) ),
 			this, SLOT( updateRequestPreview() ) );
@@ -509,16 +510,28 @@ void MainWindow::aboutQModBus( void )
 	AboutDialog( this ).exec();
 }
 
-void MainWindow::onSerialPortActive(bool active)
+void MainWindow::onRtuPortActive(bool active)
 {
 	if (active) {
-		m_modbus = ui->serialSettingsWidget->modbus();
+		m_modbus = ui->rtuSettingsWidget->modbus();
 		modbus_register_monitor_add_item_fnc(m_modbus, MainWindow::stBusMonitorAddItem);
 		modbus_register_monitor_raw_data_fnc(m_modbus, MainWindow::stBusMonitorRawData);
 	}
 	else {
 		m_modbus = NULL;
 	}
+}
+
+void MainWindow::onAsciiPortActive(bool active)
+{
+    if (active) {
+        m_modbus = ui->asciiSettingsWidget->modbus();
+        modbus_register_monitor_add_item_fnc(m_modbus, MainWindow::stBusMonitorAddItem);
+        modbus_register_monitor_raw_data_fnc(m_modbus, MainWindow::stBusMonitorRawData);
+    }
+    else {
+        m_modbus = NULL;
+    }
 }
 
 void MainWindow::onTcpPortActive(bool active)

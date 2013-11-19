@@ -83,7 +83,8 @@ private slots:
     void pollForDataOnBus( void );
     void openBatchProcessor();
     void aboutQModBus( void );
-    void onSerialPortActive(bool active);
+    void onRtuPortActive(bool active);
+    void onAsciiPortActive(bool active);
     void onTcpPortActive(bool active);
 
 private:

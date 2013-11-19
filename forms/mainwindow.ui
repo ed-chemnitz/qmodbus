@@ -32,7 +32,7 @@
          </attribute>
          <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
-           <widget class="SerialSettingsWidget" name="serialSettingsWidget" native="true"/>
+           <widget class="RtuSettingsWidget" name="rtuSettingsWidget" native="true"/>
           </item>
          </layout>
         </widget>
@@ -43,6 +43,16 @@
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
            <widget class="TcpIpSettingsWidget" name="tcpSettingsWidget" native="true"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab_3">
+         <attribute name="title">
+          <string>Modbus ASCII</string>
+         </attribute>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <widget class="AsciiSettingsWidget" name="asciiSettingsWidget" native="true"/>
           </item>
          </layout>
         </widget>
@@ -488,15 +498,21 @@
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
   <customwidget>
-   <class>SerialSettingsWidget</class>
+   <class>RtuSettingsWidget</class>
    <extends>QWidget</extends>
-   <header>serialsettingswidget.h</header>
+   <header>rtusettingswidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>TcpIpSettingsWidget</class>
    <extends>QWidget</extends>
    <header>tcpipsettingswidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>AsciiSettingsWidget</class>
+   <extends>QWidget</extends>
+   <header>asciisettingswidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -16,16 +16,19 @@ class SerialSettingsWidget : public QWidget, public IModbus
 
 public:
 	SerialSettingsWidget(QWidget *parent = 0);
-	~SerialSettingsWidget();
+	virtual ~SerialSettingsWidget();
 
 	virtual modbus_t*  modbus() { return m_serialModbus; }
 
 	virtual int setupModbusPort();
 
 protected:
-	void changeModbusInterface(const QString &port, char parity);
+	virtual void changeModbusInterface(const QString &port, char parity) {}; // = 0;
 	void releaseSerialModbus();
 	void enableGuiItems(bool checked);
+
+    Ui::SerialSettingsWidget *ui;
+    modbus_t *                m_serialModbus;
 
 signals:
 	void serialPortActive(bool active);
@@ -37,8 +40,7 @@ private slots:
 	void on_checkBox_clicked(bool checked);
 
 private:
-	Ui::SerialSettingsWidget *ui;
-	modbus_t *                m_serialModbus;
+
 };
 
 #endif // SERIALSETTINGSWIDGET_H
