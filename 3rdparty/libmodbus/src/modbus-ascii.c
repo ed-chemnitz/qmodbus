@@ -39,6 +39,9 @@
 #include <linux/serial.h>
 #endif
 
+static int _modbus_ascii_select(modbus_t *ctx, fd_set *rset,
+                       struct timeval *tv, int length_to_read);
+
 /* Define the slave ID of the remote device to talk in master mode or set the
  * internal slave ID in slave mode */
 static int _modbus_set_slave(modbus_t *ctx, int slave)
@@ -60,12 +63,14 @@ static int _modbus_ascii_build_request_basis(modbus_t *ctx, int function,
                                            uint8_t *req)
 {
     assert(ctx->slave != -1);
-    req[0] = ctx->slave;
-    req[1] = function;
-    req[2] = addr >> 8;
-    req[3] = addr & 0x00ff;
-    req[4] = nb >> 8;
-    req[5] = nb & 0x00ff;
+    req[0] = ':';
+    req[1] = ctx->slave;
+    req[2] = function;
+    req[3] = addr >> 8;
+    req[4] = addr & 0x00ff;
+    req[5] = nb >> 8;
+    req[6] = nb & 0x00ff;
+
 
     return _MODBUS_ASCII_PRESET_REQ_LENGTH;
 }
@@ -90,7 +95,7 @@ static uint8_t lcr8(uint8_t *buffer, uint16_t buffer_length)
         lcr += *buffer++; /* calculate the lcr  */
     }
 
-    return -lcr; // The sume of all raw databytes is 0 
+    return -lcr; /* The sume of all raw databytes is 0 */
 }
 
 static int _modbus_ascii_prepare_response_tid(const uint8_t *req, int *req_length)
@@ -102,8 +107,10 @@ static int _modbus_ascii_prepare_response_tid(const uint8_t *req, int *req_lengt
 
 static int _modbus_ascii_send_msg_pre(uint8_t *req, int req_length)
 {
-    uint8_t lcr = lcr8(req, req_length);
+    uint8_t lcr = lcr8(req + 1, req_length - 1);
     req[req_length++] = lcr;
+    req[req_length++] = '\r';
+    req[req_length++] = '\n';
 
     return req_length;
 }
@@ -196,44 +203,56 @@ static int win32_ser_read(struct win32_ser *ws, uint8_t *p_msg,
 #endif
 
 static char nibble_to_hex_ascii(uint8_t nibble) {
+    char c;
     if (nibble < 10) {
-        return nibble + '0'; 
+        c = nibble + '0';
     } else {
-        return nibble - 10 + 'A'; 
+        c = nibble - 10 + 'A';
     }
+    return c;
 }
 
 static uint8_t hex_ascii_to_nibble(char digit) {
     if (digit >= '0' && digit <= '9' ) {
         return digit - '0'; 
     } else if (digit >= 'A' && digit <= 'F' ) {
-        return digit - 'A'; 
+        return digit - 'A' + 10;
     } else if (digit >= 'a' && digit <= 'f' ) {
-        return digit - 'a'; 
+        return digit - 'a' + 10;
     }
     return 0xff; 
 }
 
+
 static ssize_t _modbus_ascii_send(modbus_t *ctx, const uint8_t *req, int req_length)
 {
     int i;    
-    char ascii_req[3 + (MODBUS_ASCII_MAX_ADU_LENGTH * 2)];  
-    
-    ascii_req[0] = ':'; 
+    int k;
+    char ascii_req[3 + (MODBUS_ASCII_MAX_ADU_LENGTH * 2)];
+    int send_lenghth;
+
+    k = 0;
     for (i = 0; i < req_length; ++i) {
-        ascii_req[1 + (i * 2)] = nibble_to_hex_ascii(req[i] >> 8);
-        ascii_req[1 + (i * 2)] = nibble_to_hex_ascii(req[i] & 0x0f);
+        if (req[i] == ':' || req[i] == '\r' || req[i] == '\n') {
+            ascii_req[k++] = req[i];
+        } else {
+            ascii_req[k++] = nibble_to_hex_ascii(req[i] >> 4);
+            ascii_req[k++] = nibble_to_hex_ascii(req[i] & 0x0f);
+        }
     }
-    ascii_req[1 + (req_length * 2)] = '\r';
-    ascii_req[2 + (req_length * 2)] = '\n';
+    ascii_req[k] = '\0';
+
+    printf("---input %d \"%s\"\n", k, ascii_req);
 
 #if defined(_WIN32)
     modbus_ascii_t *ctx_ascii = ctx->backend_data;
     DWORD n_bytes = 0;
-    return (WriteFile(ctx_ascii->w_ser.fd, ascii_req, (2 + (req_length * 2)), &n_bytes, NULL)) ? n_bytes : -1;
+    send_lenghth = (WriteFile(ctx_ascii->w_ser.fd, ascii_req, k, &n_bytes, NULL)) ? n_bytes : -1;
 #else
-    return write(ctx->s, ascii_req, (2 + (req_length * 2)));
+    send_lenghth = write(ctx->s, ascii_req, k);
 #endif
+    send_lenghth = ((send_lenghth - 3) / 2) + 3;
+    return send_lenghth;
 }
 
 static int _modbus_ascii_receive(modbus_t *ctx, uint8_t *req)
@@ -259,45 +278,64 @@ static int _modbus_ascii_receive(modbus_t *ctx, uint8_t *req)
     return rc;
 }
 
-static ssize_t _modbus_ascii_recv(modbus_t *ctx, uint8_t *rsp, int rsp_length)
+static ssize_t _modbus_ascii_recv_char(modbus_t *ctx, char *p_char_rsp, uint8_t with_select)
 {
-    char ascii_rsp[3 + (MODBUS_ASCII_MAX_ADU_LENGTH * 2)];  
-    uint8_t nibble;
+    int rc;
+    fd_set rset;
+    struct timeval tv;
     ssize_t size;
-    int i;
+
+    if (with_select) {
+        FD_ZERO(&rset);
+        FD_SET(ctx->s, &rset);
+
+        if (ctx->byte_timeout.tv_sec >= 0 && ctx->byte_timeout.tv_usec >= 0) {
+            /* Byte timeout can be disabled with negative values */
+            tv.tv_sec = ctx->byte_timeout.tv_sec;
+            tv.tv_usec = ctx->byte_timeout.tv_usec;
+        } else {
+            tv.tv_sec = ctx->response_timeout.tv_sec;
+            tv.tv_usec = ctx->response_timeout.tv_usec;
+        }
+
+        rc = _modbus_ascii_select(ctx, &rset, &tv, 1);
+        if (rc == -1) {
+            return 0;
+        }
+    }
 
 #if defined(_WIN32)
-    size = win32_ser_read(&((modbus_ascii_t *)ctx->backend_data)->w_ser, ascii_rsp, (3 + (rsp_length * 2)));
+    size = win32_ser_read(&((modbus_ascii_t *)ctx->backend_data)->w_ser, p_char_rsp, 1);
 #else
-    size = read(ctx->s, ascii_rsp, (3 + (rsp_length * 2)));
+    size = read(ctx->s, p_char_rsp, 1);
 #endif
-    
-    if (size == 0) {
-        return 0; 
-    }
-
-    if (ascii_rsp[0] != ':') {
-        return 0; 
-    }
-    
-    for (i = 0; i < rsp_length; ++i) {
-        nibble = hex_ascii_to_nibble(ascii_rsp[i]); 
-        if (nibble > 0x0F){
-            break; 
-        } 
-        rsp[i] = nibble << 8;
-
-        nibble = hex_ascii_to_nibble(ascii_rsp[i]); 
-        if (nibble > 0x0F){
-            break; 
-        } 
-        rsp[i] |= nibble; 
-
-    }
-    return i; 
+    printf("%c", *p_char_rsp);
+    return size;
 }
 
 
+static ssize_t _modbus_ascii_recv(modbus_t *ctx, uint8_t *rsp, int rsp_length)
+{
+    char char_resp;
+    uint8_t nibble_resp;
+
+    if (_modbus_ascii_recv_char(ctx, &char_resp, 0) != 1) {
+        return 0;
+    }
+
+    if (char_resp == ':' || char_resp == '\r' || char_resp == '\n') {
+        *rsp = char_resp;
+    } else {
+        nibble_resp = hex_ascii_to_nibble(char_resp);
+        *rsp = nibble_resp << 4;
+        if (_modbus_ascii_recv_char(ctx, &char_resp, 1) != 1) {
+            return 0;
+        }
+        nibble_resp = hex_ascii_to_nibble(char_resp);
+        *rsp |= nibble_resp;
+    }
+    return 1;
+}
 
 static int _modbus_ascii_flush(modbus_t *);
 
@@ -306,11 +344,11 @@ static int _modbus_ascii_pre_check_confirmation(modbus_t *ctx, const uint8_t *re
 {
     /* Check responding slave is the slave we requested (except for broacast
      * request) */
-    if (req[0] != rsp[0] && req[0] != MODBUS_BROADCAST_ADDRESS) {
+    if (req[1] != rsp[1] && req[1] != MODBUS_BROADCAST_ADDRESS) {
         if (ctx->debug) {
             fprintf(stderr,
                     "The responding slave %d isn't the requested slave %d\n",
-                    rsp[0], req[0]);
+                    rsp[1], req[1]);
         }
         errno = EMBBADSLAVE;
         return -1;
@@ -319,14 +357,24 @@ static int _modbus_ascii_pre_check_confirmation(modbus_t *ctx, const uint8_t *re
     }
 }
 
-/* The check_crc16 function shall return 0 is the message is ignored and the
+/* The check_crc16 function shall return 0 if the message is ignored and the
    message length if the CRC is valid. Otherwise it shall return -1 and set
    errno to EMBADCRC. */
 static int _modbus_ascii_check_integrity(modbus_t *ctx, uint8_t *msg,
                                        const int msg_length)
 {
     uint8_t lcr;
-    int slave = msg[0];
+    char colon = msg[0];
+    int slave = msg[1];
+
+    /* check for leading colon*/
+    if (colon != ':') {
+        if (ctx->debug) {
+            printf("No leading colon\n");
+        }
+        /* Following call to check_confirmation handles this error */
+        return 0;
+    }
 
     /* Filter on the Modbus unit identifier (slave) in ascii mode to avoid useless
      * CRC computing. */
@@ -338,7 +386,11 @@ static int _modbus_ascii_check_integrity(modbus_t *ctx, uint8_t *msg,
         return 0;
     }
 
-    lcr = lcr8(msg, msg_length);
+    lcr = lcr8(msg + 1, msg_length - 3); /* strip ":" and "\r\n" */
+
+    ctx->last_crc_expected = 0;
+    ctx->last_crc_received = lcr;
+
     /* Check CRC of msg */
     if (lcr == 0) {
         return msg_length;
@@ -970,9 +1022,12 @@ static int _modbus_ascii_select(modbus_t *ctx, fd_set *rset,
                        struct timeval *tv, int length_to_read)
 {
     int s_rc;
+
+    (void)length_to_read; /* unused */
+
 #if defined(_WIN32)
     s_rc = win32_ser_select(&(((modbus_ascii_t*)ctx->backend_data)->w_ser),
-                            length_to_read, tv);
+                            1, tv);
     if (s_rc == 0) {
         errno = ETIMEDOUT;
         return -1;
@@ -1033,7 +1088,7 @@ const modbus_backend_t _modbus_ascii_backend = {
     _modbus_ascii_free
 };
 
-modbus_t* modbus_ascii(const char *device,
+modbus_t* modbus_new_ascii(const char *device,
                          int baud, char parity, int data_bit,
                          int stop_bit)
 {

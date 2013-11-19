@@ -525,15 +525,17 @@ static int check_confirmation(modbus_t *ctx, uint8_t *req,
     const int offset = ctx->backend->header_length;
     const int function = rsp[offset];
 
-	// -- BEGIN QMODBUS MODIFICATION --
-	int s_crc = 0; // TODO
+	/* BEGIN QMODBUS MODIFICATION */
+	int s_crc = 0; /* TODO */
     if (ctx->monitor_add_item) {
-	    ctx->monitor_add_item(ctx, 1, req[0], req[1],
-							( req[2] << 8 ) + req[3],
-							( req[4] << 8 ) + req[5],
-							s_crc, s_crc );
+	    ctx->monitor_add_item(ctx, 1,
+	            req[offset - 1],  /* slave */
+	            function,  /* func */
+				( req[offset + 1] << 8 ) + req[offset + 2], /* addr */
+				( req[offset + 3] << 8 ) + req[offset + 4], /* nb */
+				s_crc, s_crc );
     }
-	// -- END QMODBUS MODIFICATION --
+	/* END QMODBUS MODIFICATION */
 
     if (ctx->backend->pre_check_confirmation) {
         rc = ctx->backend->pre_check_confirmation(ctx, req, rsp, rsp_length);
@@ -631,17 +633,15 @@ static int check_confirmation(modbus_t *ctx, uint8_t *req,
 		{
 			case MODBUS_FC_READ_COILS:
 			case MODBUS_FC_READ_DISCRETE_INPUTS:
-				num_items = rsp_nb_value*8;
+				num_items = rsp_nb_value * 8;
 				break;
 			case MODBUS_FC_WRITE_AND_READ_REGISTERS:
 			case MODBUS_FC_READ_HOLDING_REGISTERS:
 			case MODBUS_FC_READ_INPUT_REGISTERS:
-				num_items = rsp_nb_value/2;
 				break;
 			case MODBUS_FC_WRITE_MULTIPLE_COILS:
 			case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
 				addr = (rsp[offset + 1] << 8) | rsp[offset + 2];
-				num_items = rsp_nb_value;
 				break;
 			default:
 				break;

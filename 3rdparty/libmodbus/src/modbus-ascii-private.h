@@ -31,11 +31,11 @@
 #include <termios.h>
 #endif
 
-#define _MODBUS_ASCII_HEADER_LENGTH      1
-#define _MODBUS_ASCII_PRESET_REQ_LENGTH  6
+#define _MODBUS_ASCII_HEADER_LENGTH      2
+#define _MODBUS_ASCII_PRESET_REQ_LENGTH  7
 #define _MODBUS_ASCII_PRESET_RSP_LENGTH  2
 
-#define _MODBUS_ASCII_CHECKSUM_LENGTH    2
+#define _MODBUS_ASCII_CHECKSUM_LENGTH    3 /* lcr8 + \r\n */
 
 #if defined(_WIN32)
 #if !defined(ENOTSUP)
