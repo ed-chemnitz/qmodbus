@@ -122,12 +122,14 @@ static void _sleep_response_timeout(modbus_t *ctx)
 
 int modbus_flush(modbus_t *ctx)
 {
+    int rc;
+
     if (ctx == NULL) {
         errno = EINVAL;
         return -1;
     }
 
-    int rc = ctx->backend->flush(ctx);
+    rc = ctx->backend->flush(ctx);
     if (rc != -1 && ctx->debug) {
         /* Not all backends are able to return the number of bytes flushed */
         printf("Bytes flushed (%d)\n", rc);
@@ -470,7 +472,8 @@ int _modbus_receive_msg(modbus_t *ctx, uint8_t *msg, msg_type_t msg_type)
             }
         }
 
-        if (length_to_read > 0 && ctx->byte_timeout.tv_sec >= 0 && ctx->byte_timeout.tv_usec >= 0) {
+        if (length_to_read > 0 &&
+            (ctx->byte_timeout.tv_sec > 0 || ctx->byte_timeout.tv_usec > 0)) {
             /* If there is no character in the buffer, the allowed timeout
                interval between two consecutive bytes is defined by
                byte_timeout */
@@ -525,17 +528,15 @@ static int check_confirmation(modbus_t *ctx, uint8_t *req,
     const int offset = ctx->backend->header_length;
     const int function = rsp[offset];
 
-	/* BEGIN QMODBUS MODIFICATION */
-	int s_crc = 0; /* TODO */
+	// -- BEGIN QMODBUS MODIFICATION --
+	int s_crc = 0; // TODO
     if (ctx->monitor_add_item) {
-	    ctx->monitor_add_item(ctx, 1,
-	            req[offset - 1],  /* slave */
-	            function,  /* func */
-				( req[offset + 1] << 8 ) + req[offset + 2], /* addr */
-				( req[offset + 3] << 8 ) + req[offset + 4], /* nb */
-				s_crc, s_crc );
+	    ctx->monitor_add_item(ctx, 1, req[0], req[1],
+							( req[2] << 8 ) + req[3],
+							( req[4] << 8 ) + req[5],
+							s_crc, s_crc );
     }
-	/* END QMODBUS MODIFICATION */
+	// -- END QMODBUS MODIFICATION --
 
     if (ctx->backend->pre_check_confirmation) {
         rc = ctx->backend->pre_check_confirmation(ctx, req, rsp, rsp_length);
@@ -584,7 +585,7 @@ static int check_confirmation(modbus_t *ctx, uint8_t *req,
         if (function != req[offset]) {
             if (ctx->debug) {
                 fprintf(stderr,
-                        "Received function not corresponding to the requestd (0x%X != 0x%X)\n",
+                        "Received function not corresponding to the request (0x%X != 0x%X)\n",
                         function, req[offset]);
             }
             if (ctx->error_recovery & MODBUS_ERROR_RECOVERY_PROTOCOL) {
@@ -633,15 +634,17 @@ static int check_confirmation(modbus_t *ctx, uint8_t *req,
 		{
 			case MODBUS_FC_READ_COILS:
 			case MODBUS_FC_READ_DISCRETE_INPUTS:
-				num_items = rsp_nb_value * 8;
+				num_items = rsp_nb_value*8;
 				break;
 			case MODBUS_FC_WRITE_AND_READ_REGISTERS:
 			case MODBUS_FC_READ_HOLDING_REGISTERS:
 			case MODBUS_FC_READ_INPUT_REGISTERS:
+				num_items = rsp_nb_value/2;
 				break;
 			case MODBUS_FC_WRITE_MULTIPLE_COILS:
 			case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
 				addr = (rsp[offset + 1] << 8) | rsp[offset + 2];
+				num_items = rsp_nb_value;
 				break;
 			default:
 				break;
@@ -1697,7 +1700,7 @@ int modbus_get_socket(modbus_t *ctx)
 }
 
 /* Get the timeout interval used to wait for a response */
-int modbus_get_response_timeout(modbus_t *ctx, long *to_sec, long *to_usec)
+int modbus_get_response_timeout(modbus_t *ctx, uint32_t *to_sec, uint32_t *to_usec)
 {
     if (ctx == NULL) {
         errno = EINVAL;
@@ -1709,10 +1712,10 @@ int modbus_get_response_timeout(modbus_t *ctx, long *to_sec, long *to_usec)
     return 0;
 }
 
-int modbus_set_response_timeout(modbus_t *ctx, long to_sec, long to_usec)
+int modbus_set_response_timeout(modbus_t *ctx, uint32_t to_sec, uint32_t to_usec)
 {
     if (ctx == NULL ||
-        to_sec < 0 || to_usec < 0 || to_usec > 999999) {
+        (to_sec == 0 && to_usec == 0) || to_usec > 999999) {
         errno = EINVAL;
         return -1;
     }
@@ -1723,7 +1726,7 @@ int modbus_set_response_timeout(modbus_t *ctx, long to_sec, long to_usec)
 }
 
 /* Get the timeout interval between two consecutive bytes of a message */
-int modbus_get_byte_timeout(modbus_t *ctx, long *to_sec, long *to_usec)
+int modbus_get_byte_timeout(modbus_t *ctx, uint32_t *to_sec, uint32_t *to_usec)
 {
     if (ctx == NULL) {
         errno = EINVAL;
@@ -1735,9 +1738,9 @@ int modbus_get_byte_timeout(modbus_t *ctx, long *to_sec, long *to_usec)
     return 0;
 }
 
-int modbus_set_byte_timeout(modbus_t *ctx, long to_sec, long to_usec)
+int modbus_set_byte_timeout(modbus_t *ctx, uint32_t to_sec, uint32_t to_usec)
 {
-    /* Byte timeout can be disabled with negative values */
+    /* Byte timeout can be disabled when both values are zero */
     if (ctx == NULL || to_usec > 999999) {
         errno = EINVAL;
         return -1;

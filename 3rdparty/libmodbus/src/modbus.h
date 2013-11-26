@@ -16,8 +16,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef _MODBUS_H_
-#define _MODBUS_H_
+#ifndef MODBUS_H
+#define MODBUS_H
 
 /* Add this for macros that defined unix flavor */
 #if (defined(__unix__) || defined(unix)) && !defined(USG)
@@ -178,11 +178,11 @@ MODBUS_API int modbus_set_error_recovery(modbus_t *ctx, modbus_error_recovery_mo
 MODBUS_API int modbus_set_socket(modbus_t *ctx, int s);
 MODBUS_API int modbus_get_socket(modbus_t *ctx);
 
-MODBUS_API int modbus_get_response_timeout(modbus_t *ctx, long *to_sec, long *to_usec);
-MODBUS_API int modbus_set_response_timeout(modbus_t *ctx, long to_sec, long to_usec);
+MODBUS_API int modbus_get_response_timeout(modbus_t *ctx, uint32_t *to_sec, uint32_t *to_usec);
+MODBUS_API int modbus_set_response_timeout(modbus_t *ctx, uint32_t to_sec, uint32_t to_usec);
 
-MODBUS_API int modbus_get_byte_timeout(modbus_t *ctx, long *to_sec, long *to_usec);
-MODBUS_API int modbus_set_byte_timeout(modbus_t *ctx, long to_sec, long to_usec);
+MODBUS_API int modbus_get_byte_timeout(modbus_t *ctx, uint32_t *to_sec, uint32_t *to_usec);
+MODBUS_API int modbus_set_byte_timeout(modbus_t *ctx, uint32_t to_sec, uint32_t to_usec);
 
 MODBUS_API int modbus_get_header_length(modbus_t *ctx);
 
@@ -262,4 +262,4 @@ MODBUS_API void modbus_set_float_dcba(float f, uint16_t *dest);
 
 MODBUS_END_DECLS
 
-#endif  /* _MODBUS_H_ */
+#endif  /* MODBUS_H */

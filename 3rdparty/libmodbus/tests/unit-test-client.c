@@ -34,18 +34,22 @@ int test_raw_request(modbus_t *, int);
 
 int main(int argc, char *argv[])
 {
-    uint8_t *tab_rp_bits;
-    uint16_t *tab_rp_registers;
-    uint16_t *tab_rp_registers_bad;
-    modbus_t *ctx;
+    uint8_t *tab_rp_bits = NULL;
+    uint16_t *tab_rp_registers = NULL;
+    uint16_t *tab_rp_registers_bad = NULL;
+    modbus_t *ctx = NULL;
     int i;
     uint8_t value;
     int nb_points;
     int rc;
     float real;
     uint32_t ireal;
-    long old_response_timeout_sec;
-    long old_response_timeout_usec;
+    uint32_t old_response_to_sec;
+    uint32_t old_response_to_usec;
+    uint32_t new_response_to_sec;
+    uint32_t new_response_to_usec;
+    uint32_t old_byte_to_sec;
+    uint32_t old_byte_to_usec;
     int use_backend;
 
     if (argc > 1) {
@@ -84,10 +88,23 @@ int main(int argc, char *argv[])
           modbus_set_slave(ctx, SERVER_ID);
     }
 
+    modbus_get_response_timeout(ctx, &old_response_to_sec, &old_response_to_usec);
     if (modbus_connect(ctx) == -1) {
         fprintf(stderr, "Connection failed: %s\n", modbus_strerror(errno));
         modbus_free(ctx);
         return -1;
+    }
+    modbus_get_response_timeout(ctx, &new_response_to_sec, &new_response_to_usec);
+
+    printf("** UNIT TESTING **\n");
+
+    printf("1/1 No response timeout modification on connect: ");
+    if (old_response_to_sec == new_response_to_sec &&
+        old_response_to_usec == new_response_to_usec) {
+        printf("OK\n");
+    } else {
+        printf("FAILED\n");
+        goto close;
     }
 
     /* Allocate and initialize the memory to store the bits */
@@ -100,8 +117,6 @@ int main(int argc, char *argv[])
         UT_REGISTERS_NB : UT_INPUT_REGISTERS_NB;
     tab_rp_registers = (uint16_t *) malloc(nb_points * sizeof(uint16_t));
     memset(tab_rp_registers, 0, nb_points * sizeof(uint16_t));
-
-    printf("** UNIT TESTING **\n");
 
     printf("\nTEST WRITE/READ:\n");
 
@@ -647,10 +662,11 @@ int main(int argc, char *argv[])
     }
 
     /* Save original timeout */
-    modbus_get_response_timeout(ctx, &old_response_timeout_sec, &old_response_timeout_usec);
+    modbus_get_response_timeout(ctx, &old_response_to_sec, &old_response_to_usec);
+    modbus_get_byte_timeout(ctx, &old_byte_to_sec, &old_byte_to_usec);
 
-    rc = modbus_set_response_timeout(ctx, -1, 0);
-    printf("1/6 Invalid response timeout (negative): ");
+    rc = modbus_set_response_timeout(ctx, 0, 0);
+    printf("1/6 Invalid response timeout (zero): ");
     if (rc == -1 && errno == EINVAL) {
         printf("OK\n");
     } else {
@@ -659,7 +675,7 @@ int main(int argc, char *argv[])
     }
 
     rc = modbus_set_response_timeout(ctx, 0, 1000000);
-    printf("2/6 Invalid response timeout (too large): ");
+    printf("2/6 Invalid response timeout (too large us): ");
     if (rc == -1 && errno == EINVAL) {
         printf("OK\n");
     } else {
@@ -668,7 +684,7 @@ int main(int argc, char *argv[])
     }
 
     rc = modbus_set_byte_timeout(ctx, 0, 1000000);
-    printf("3/6 Invalid byte timeout (too large): ");
+    printf("3/6 Invalid byte timeout (too large us): ");
     if (rc == -1 && errno == EINVAL) {
         printf("OK\n");
     } else {
@@ -676,21 +692,21 @@ int main(int argc, char *argv[])
         goto close;
     }
 
-    modbus_set_response_timeout(ctx, 0, 0);
+    modbus_set_response_timeout(ctx, 0, 1);
     rc = modbus_read_registers(ctx, UT_REGISTERS_ADDRESS,
                                UT_REGISTERS_NB, tab_rp_registers);
-    printf("4/6 Zero response timeout: ");
+    printf("4/6 1us response timeout: ");
     if (rc == -1 && errno == ETIMEDOUT) {
         printf("OK\n");
     } else {
-        printf("FAILED (can fail on slow systems or Windows)\n");
+        printf("FAILED (can fail on some platforms)\n");
     }
 
     /* A wait and flush operation is done by the error recovery code of
      * libmodbus but after a sleep of current response timeout
      * so 0 can't be too short!
      */
-    usleep(old_response_timeout_sec * 1000000 + old_response_timeout_usec);
+    usleep(old_response_to_sec * 1000000 + old_response_to_usec);
     modbus_flush(ctx);
 
     /* Trigger a special behaviour on server to wait for 0.5 second before
@@ -721,8 +737,57 @@ int main(int argc, char *argv[])
         goto close;
     }
 
-    /* Restore original timeout */
-    modbus_set_response_timeout(ctx, old_response_timeout_sec, old_response_timeout_usec);
+    /* Disable the byte timeout.
+       The full response must be available in the 600ms interval */
+    modbus_set_byte_timeout(ctx, 0, 0);
+    rc = modbus_read_registers(ctx, UT_REGISTERS_ADDRESS_SLEEP_500_MS,
+                               1, tab_rp_registers);
+    printf("7/7 Disable byte timeout: ");
+    if (rc == 1) {
+        printf("OK\n");
+    } else {
+        printf("FAILED\n");
+        goto close;
+    }
+
+    /* Restore original response timeout */
+    modbus_set_response_timeout(ctx, old_response_to_sec,
+                                old_response_to_usec);
+
+    if (use_backend == TCP) {
+        /* Test server is only able to test byte timeout with the TCP backend */
+
+        /* Timeout of 3ms between bytes */
+        modbus_set_byte_timeout(ctx, 0, 3000);
+        rc = modbus_read_registers(ctx, UT_REGISTERS_ADDRESS_BYTE_SLEEP_5_MS,
+                                   1, tab_rp_registers);
+        printf("1/2 Too small byte timeout (3ms < 5ms): ");
+        if (rc == -1 && errno == ETIMEDOUT) {
+            printf("OK\n");
+        } else {
+            printf("FAILED\n");
+            goto close;
+        }
+
+        /* Wait remaing bytes before flushing */
+        usleep(11 * 5000);
+        modbus_flush(ctx);
+
+        /* Timeout of 10ms between bytes */
+        modbus_set_byte_timeout(ctx, 0, 7000);
+        rc = modbus_read_registers(ctx, UT_REGISTERS_ADDRESS_BYTE_SLEEP_5_MS,
+                                   1, tab_rp_registers);
+        printf("2/2 Adapted byte timeout (7ms > 5ms): ");
+        if (rc == 1) {
+            printf("OK\n");
+        } else {
+            printf("FAILED\n");
+            goto close;
+        }
+    }
+
+    /* Restore original byte timeout */
+    modbus_set_byte_timeout(ctx, old_byte_to_sec, old_byte_to_usec);
 
     /** BAD RESPONSE **/
     printf("\nTEST BAD RESPONSE ERROR:\n");
