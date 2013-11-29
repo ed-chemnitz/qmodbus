@@ -1,7 +1,7 @@
 /*
  * main.cpp - main file for QModBus
  *
- * Copyright (c) 2009 Tobias Doerffel / Electronic Design Chemnitz
+ * Copyright (c) 2009-2013 Tobias Doerffel / Electronic Design Chemnitz
  *
  * This file is part of QModBus - http://qmodbus.sourceforge.net
  *
@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 {
 	QApplication a(argc, argv);
 
-	QApplication::setOrganizationName( "Electronic Design Chemnitz" );
+	QApplication::setOrganizationName( "EDC Electronic Design Chemnitz GmbH" );
 	QApplication::setOrganizationDomain( "ed-chemnitz.de" );
 	QApplication::setApplicationName( "QModBus" );
 
