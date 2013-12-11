@@ -34,18 +34,23 @@ int test_raw_request(modbus_t *, int);
 
 int main(int argc, char *argv[])
 {
-    uint8_t *tab_rp_bits;
-    uint16_t *tab_rp_registers;
-    uint16_t *tab_rp_registers_bad;
-    modbus_t *ctx;
+    const int NB_REPORT_SLAVE_ID = 10;
+    uint8_t *tab_rp_bits = NULL;
+    uint16_t *tab_rp_registers = NULL;
+    uint16_t *tab_rp_registers_bad = NULL;
+    modbus_t *ctx = NULL;
     int i;
     uint8_t value;
     int nb_points;
     int rc;
     float real;
     uint32_t ireal;
-    struct timeval old_response_timeout;
-    struct timeval response_timeout;
+    uint32_t old_response_to_sec;
+    uint32_t old_response_to_usec;
+    uint32_t new_response_to_sec;
+    uint32_t new_response_to_usec;
+    uint32_t old_byte_to_sec;
+    uint32_t old_byte_to_usec;
     int use_backend;
 
     if (argc > 1) {
@@ -84,10 +89,23 @@ int main(int argc, char *argv[])
           modbus_set_slave(ctx, SERVER_ID);
     }
 
+    modbus_get_response_timeout(ctx, &old_response_to_sec, &old_response_to_usec);
     if (modbus_connect(ctx) == -1) {
         fprintf(stderr, "Connection failed: %s\n", modbus_strerror(errno));
         modbus_free(ctx);
         return -1;
+    }
+    modbus_get_response_timeout(ctx, &new_response_to_sec, &new_response_to_usec);
+
+    printf("** UNIT TESTING **\n");
+
+    printf("1/1 No response timeout modification on connect: ");
+    if (old_response_to_sec == new_response_to_sec &&
+        old_response_to_usec == new_response_to_usec) {
+        printf("OK\n");
+    } else {
+        printf("FAILED\n");
+        goto close;
     }
 
     /* Allocate and initialize the memory to store the bits */
@@ -100,8 +118,6 @@ int main(int argc, char *argv[])
         UT_REGISTERS_NB : UT_INPUT_REGISTERS_NB;
     tab_rp_registers = (uint16_t *) malloc(nb_points * sizeof(uint16_t));
     memset(tab_rp_registers, 0, nb_points * sizeof(uint16_t));
-
-    printf("** UNIT TESTING **\n");
 
     printf("\nTEST WRITE/READ:\n");
 
@@ -524,7 +540,7 @@ int main(int argc, char *argv[])
         uint8_t rsp[MODBUS_RTU_MAX_ADU_LENGTH];
 
         /* No response in RTU mode */
-        printf("1/5-A No response from slave %d: ", INVALID_SERVER_ID);
+        printf("1-A/3 No response from slave %d: ", INVALID_SERVER_ID);
 
         if (rc == -1 && errno == ETIMEDOUT) {
             printf("OK\n");
@@ -545,7 +561,7 @@ int main(int argc, char *argv[])
         modbus_send_raw_request(ctx, raw_rep, RAW_REP_LENGTH * sizeof(uint8_t));
         rc = modbus_receive_confirmation(ctx, rsp);
 
-        printf("1/5-B No response from slave %d on indication/confirmation messages: ",
+        printf("1-B/3 No response from slave %d on indication/confirmation messages: ",
                INVALID_SERVER_ID);
 
         if (rc == -1 && errno == ETIMEDOUT) {
@@ -559,7 +575,7 @@ int main(int argc, char *argv[])
         modbus_send_raw_request(ctx, raw_invalid_req, RAW_REQ_LENGTH * sizeof(uint8_t));
         rc = modbus_receive_confirmation(ctx, rsp);
 
-        printf("1/5-C No response from slave %d with invalid request: ",
+        printf("1-C/3 No response from slave %d with invalid request: ",
                INVALID_SERVER_ID);
 
         if (rc == -1 && errno == ETIMEDOUT) {
@@ -570,7 +586,7 @@ int main(int argc, char *argv[])
         }
     } else {
         /* Response in TCP mode */
-        printf("1/4 Response from slave %d: ", INVALID_SERVER_ID);
+        printf("1/3 Response from slave %d: ", INVALID_SERVER_ID);
 
         if (rc == UT_REGISTERS_NB) {
             printf("OK\n");
@@ -588,7 +604,7 @@ int main(int argc, char *argv[])
 
     rc = modbus_read_registers(ctx, UT_REGISTERS_ADDRESS,
                                UT_REGISTERS_NB, tab_rp_registers);
-    printf("2/5 Reply after a broadcast query: ");
+    printf("2/3 Reply after a broadcast query: ");
     if (rc == UT_REGISTERS_NB) {
         printf("OK\n");
     } else {
@@ -603,10 +619,29 @@ int main(int argc, char *argv[])
         modbus_set_slave(ctx, MODBUS_TCP_SLAVE);
     }
 
-    printf("3/5 Report slave ID: \n");
-    /* tab_rp_bits is used to store bytes */
-    rc = modbus_report_slave_id(ctx, tab_rp_bits);
+    printf("3/3 Response with an invalid TID or slave: ");
+    rc = modbus_read_registers(ctx, UT_REGISTERS_ADDRESS_INVALID_TID_OR_SLAVE,
+                               1, tab_rp_registers);
     if (rc == -1) {
+        printf("OK\n");
+    } else {
+        printf("FAILED\n");
+        goto close;
+    }
+
+    printf("1/2 Report slave ID truncated: \n");
+    /* Set a marker to ensure limit is respected */
+    tab_rp_bits[NB_REPORT_SLAVE_ID - 1] = 42;
+    rc = modbus_report_slave_id(ctx, NB_REPORT_SLAVE_ID - 1, tab_rp_bits);
+    if (rc != NB_REPORT_SLAVE_ID && tab_rp_bits[NB_REPORT_SLAVE_ID - 1] != 42) {
+        printf("FAILED\n");
+        goto close;
+    }
+
+    printf("2/2 Report slave ID: \n");
+    /* tab_rp_bits is used to store bytes */
+    rc = modbus_report_slave_id(ctx, NB_REPORT_SLAVE_ID, tab_rp_bits);
+    if (rc != NB_REPORT_SLAVE_ID) {
         printf("FAILED\n");
         goto close;
     }
@@ -636,38 +671,133 @@ int main(int argc, char *argv[])
         printf("\n");
     }
 
-    printf("5/5 Response with an invalid TID or slave: ");
-    rc = modbus_read_registers(ctx, UT_REGISTERS_ADDRESS_INVALID_TID_OR_SLAVE,
-                               1, tab_rp_registers);
-    if (rc == -1) {
+    /* Save original timeout */
+    modbus_get_response_timeout(ctx, &old_response_to_sec, &old_response_to_usec);
+    modbus_get_byte_timeout(ctx, &old_byte_to_sec, &old_byte_to_usec);
+
+    rc = modbus_set_response_timeout(ctx, 0, 0);
+    printf("1/6 Invalid response timeout (zero): ");
+    if (rc == -1 && errno == EINVAL) {
         printf("OK\n");
     } else {
         printf("FAILED\n");
         goto close;
     }
 
-    /* Save original timeout */
-    modbus_get_response_timeout(ctx, &old_response_timeout);
+    rc = modbus_set_response_timeout(ctx, 0, 1000000);
+    printf("2/6 Invalid response timeout (too large us): ");
+    if (rc == -1 && errno == EINVAL) {
+        printf("OK\n");
+    } else {
+        printf("FAILED\n");
+        goto close;
+    }
 
-    /* Define a new and too short timeout */
-    response_timeout.tv_sec = 0;
-    response_timeout.tv_usec = 0;
-    modbus_set_response_timeout(ctx, &response_timeout);
+    rc = modbus_set_byte_timeout(ctx, 0, 1000000);
+    printf("3/6 Invalid byte timeout (too large us): ");
+    if (rc == -1 && errno == EINVAL) {
+        printf("OK\n");
+    } else {
+        printf("FAILED\n");
+        goto close;
+    }
 
+    modbus_set_response_timeout(ctx, 0, 1);
     rc = modbus_read_registers(ctx, UT_REGISTERS_ADDRESS,
                                UT_REGISTERS_NB, tab_rp_registers);
-    printf("4/4 Too short timeout: ");
+    printf("4/6 1us response timeout: ");
     if (rc == -1 && errno == ETIMEDOUT) {
         printf("OK\n");
     } else {
-        printf("FAILED (can fail on slow systems or Windows)\n");
+        printf("FAILED (can fail on some platforms)\n");
     }
 
-    /* Restore original timeout */
-    modbus_set_response_timeout(ctx, &old_response_timeout);
-
     /* A wait and flush operation is done by the error recovery code of
-     * libmodbus */
+     * libmodbus but after a sleep of current response timeout
+     * so 0 can't be too short!
+     */
+    usleep(old_response_to_sec * 1000000 + old_response_to_usec);
+    modbus_flush(ctx);
+
+    /* Trigger a special behaviour on server to wait for 0.5 second before
+     * replying whereas allowed timeout is 0.2 second */
+    modbus_set_response_timeout(ctx, 0, 200000);
+    rc = modbus_read_registers(ctx, UT_REGISTERS_ADDRESS_SLEEP_500_MS,
+                               1, tab_rp_registers);
+    printf("5/6 Too short response timeout (0.2s < 0.5s): ");
+    if (rc == -1 && errno == ETIMEDOUT) {
+        printf("OK\n");
+    } else {
+        printf("FAILED\n");
+        goto close;
+    }
+
+    /* Wait for reply (0.2 + 0.4 > 0.5 s) and flush before continue */
+    usleep(400000);
+    modbus_flush(ctx);
+
+    modbus_set_response_timeout(ctx, 0, 600000);
+    rc = modbus_read_registers(ctx, UT_REGISTERS_ADDRESS_SLEEP_500_MS,
+                               1, tab_rp_registers);
+    printf("6/6 Adequate response timeout (0.6s > 0.5s): ");
+    if (rc == 1) {
+        printf("OK\n");
+    } else {
+        printf("FAILED\n");
+        goto close;
+    }
+
+    /* Disable the byte timeout.
+       The full response must be available in the 600ms interval */
+    modbus_set_byte_timeout(ctx, 0, 0);
+    rc = modbus_read_registers(ctx, UT_REGISTERS_ADDRESS_SLEEP_500_MS,
+                               1, tab_rp_registers);
+    printf("7/7 Disable byte timeout: ");
+    if (rc == 1) {
+        printf("OK\n");
+    } else {
+        printf("FAILED\n");
+        goto close;
+    }
+
+    /* Restore original response timeout */
+    modbus_set_response_timeout(ctx, old_response_to_sec,
+                                old_response_to_usec);
+
+    if (use_backend == TCP) {
+        /* Test server is only able to test byte timeout with the TCP backend */
+
+        /* Timeout of 3ms between bytes */
+        modbus_set_byte_timeout(ctx, 0, 3000);
+        rc = modbus_read_registers(ctx, UT_REGISTERS_ADDRESS_BYTE_SLEEP_5_MS,
+                                   1, tab_rp_registers);
+        printf("1/2 Too small byte timeout (3ms < 5ms): ");
+        if (rc == -1 && errno == ETIMEDOUT) {
+            printf("OK\n");
+        } else {
+            printf("FAILED\n");
+            goto close;
+        }
+
+        /* Wait remaing bytes before flushing */
+        usleep(11 * 5000);
+        modbus_flush(ctx);
+
+        /* Timeout of 10ms between bytes */
+        modbus_set_byte_timeout(ctx, 0, 7000);
+        rc = modbus_read_registers(ctx, UT_REGISTERS_ADDRESS_BYTE_SLEEP_5_MS,
+                                   1, tab_rp_registers);
+        printf("2/2 Adapted byte timeout (7ms > 5ms): ");
+        if (rc == 1) {
+            printf("OK\n");
+        } else {
+            printf("FAILED\n");
+            goto close;
+        }
+    }
+
+    /* Restore original byte timeout */
+    modbus_set_byte_timeout(ctx, old_byte_to_sec, old_byte_to_usec);
 
     /** BAD RESPONSE **/
     printf("\nTEST BAD RESPONSE ERROR:\n");
@@ -675,6 +805,7 @@ int main(int argc, char *argv[])
     /* Allocate only the required space */
     tab_rp_registers_bad = (uint16_t *) malloc(
         UT_REGISTERS_NB_SPECIAL * sizeof(uint16_t));
+
     rc = modbus_read_registers(ctx, UT_REGISTERS_ADDRESS,
                                UT_REGISTERS_NB_SPECIAL, tab_rp_registers_bad);
     printf("* modbus_read_registers: ");
@@ -684,14 +815,13 @@ int main(int argc, char *argv[])
         printf("FAILED\n");
         goto close;
     }
-
     free(tab_rp_registers_bad);
 
     /** MANUAL EXCEPTION **/
     printf("\nTEST MANUAL EXCEPTION:\n");
-
     rc = modbus_read_registers(ctx, UT_REGISTERS_ADDRESS_SPECIAL,
                                UT_REGISTERS_NB, tab_rp_registers);
+
     printf("* modbus_read_registers at special address: ");
     if (rc == -1 && errno == EMBXSBUSY) {
         printf("OK\n");
@@ -728,14 +858,14 @@ int test_raw_request(modbus_t *ctx, int use_backend)
         /* slave */
         (use_backend == RTU) ? SERVER_ID : 0xFF,
         /* function, addr 1, 5 values */
-        0x03, 0x00, 0x01, 0x0, 0x05,
+        MODBUS_FC_READ_HOLDING_REGISTERS, 0x00, 0x01, 0x0, 0x05,
     };
     /* Write and read registers request */
     uint8_t raw_rw_req[] = {
         /* slave */
         (use_backend == RTU) ? SERVER_ID : 0xFF,
         /* function, addr to read, nb to read */
-        0x17,
+        MODBUS_FC_WRITE_AND_READ_REGISTERS,
         /* Read */
         0, 0,
         (MODBUS_MAX_WR_READ_REGISTERS + 1) >> 8,
@@ -751,7 +881,12 @@ int test_raw_request(modbus_t *ctx, int use_backend)
     /* See issue #143, test with MAX_WR_WRITE_REGISTERS */
     int req_length;
     uint8_t rsp[MODBUS_TCP_MAX_ADU_LENGTH];
-    int tab_function[] = {0x01, 0x02, 0x03, 0x04};
+    int tab_function[] = {
+        MODBUS_FC_READ_COILS,
+        MODBUS_FC_READ_DISCRETE_INPUTS,
+        MODBUS_FC_READ_HOLDING_REGISTERS,
+        MODBUS_FC_READ_INPUT_REGISTERS
+    };
     int tab_nb_max[] = {
         MODBUS_MAX_READ_BITS + 1,
         MODBUS_MAX_READ_BITS + 1,
@@ -835,7 +970,7 @@ int test_raw_request(modbus_t *ctx, int use_backend)
 
     /* Modbus write and read multiple registers */
     i = 0;
-    tab_function[i] = 0x17;
+    tab_function[i] = MODBUS_FC_WRITE_AND_READ_REGISTERS;
     for (j=0; j<2; j++) {
         if (j == 0) {
             /* Try to read zero values on first iteration */
