@@ -1,7 +1,7 @@
 /*
  * mainwindow.cpp - implementation of MainWindow class
  *
- * Copyright (c) 2009-2010 Tobias Doerffel / Electronic Design Chemnitz
+ * Copyright (c) 2009-2013 Tobias Doerffel / Electronic Design Chemnitz
  *
  * This file is part of QModBus - http://qmodbus.sourceforge.net
  *
@@ -184,17 +184,17 @@ static QString descriptiveDataTypeName( int funcCode )
 {
 	switch( funcCode )
 	{
-		case _FC_READ_COILS:
-		case _FC_WRITE_SINGLE_COIL:
-		case _FC_WRITE_MULTIPLE_COILS:
+		case MODBUS_FC_READ_COILS:
+		case MODBUS_FC_WRITE_SINGLE_COIL:
+		case MODBUS_FC_WRITE_MULTIPLE_COILS:
 			return "Coil (binary)";
-		case _FC_READ_DISCRETE_INPUTS:
+		case MODBUS_FC_READ_DISCRETE_INPUTS:
 			return "Discrete Input (binary)";
-		case _FC_READ_HOLDING_REGISTERS:
-		case _FC_WRITE_SINGLE_REGISTER:
-		case _FC_WRITE_MULTIPLE_REGISTERS:
+		case MODBUS_FC_READ_HOLDING_REGISTERS:
+		case MODBUS_FC_WRITE_SINGLE_REGISTER:
+		case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
 			return "Holding Register (16 bit)";
-		case _FC_READ_INPUT_REGISTERS:
+		case MODBUS_FC_READ_INPUT_REGISTERS:
 			return "Input Register (16 bit)";
 		default:
 			break;
@@ -229,7 +229,7 @@ void MainWindow::updateRequestPreview( void )
 							currentText() ) );
 	const int addr = ui->startAddr->value();
 	const int num = ui->numCoils->value();
-	if( func == _FC_WRITE_SINGLE_COIL || func == _FC_WRITE_SINGLE_REGISTER )
+	if( func == MODBUS_FC_WRITE_SINGLE_COIL || func == MODBUS_FC_WRITE_SINGLE_REGISTER )
 	{
 		ui->requestPreview->setText(
 			QString().sprintf( "%.2x  %.2x  %.2x %.2x ",
@@ -264,13 +264,13 @@ void MainWindow::updateRegisterView( void )
 	int rowCount = 0;
 	switch( func )
 	{
-		case _FC_WRITE_SINGLE_REGISTER:
-		case _FC_WRITE_SINGLE_COIL:
+		case MODBUS_FC_WRITE_SINGLE_REGISTER:
+		case MODBUS_FC_WRITE_SINGLE_COIL:
 			ui->numCoils->setEnabled( false );
 			rowCount = 1;
 			break;
-		case _FC_WRITE_MULTIPLE_COILS:
-		case _FC_WRITE_MULTIPLE_REGISTERS:
+		case MODBUS_FC_WRITE_MULTIPLE_COILS:
+		case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
 			rowCount = ui->numCoils->value();
 		default:
 			ui->numCoils->setEnabled( true );
@@ -302,8 +302,8 @@ void MainWindow::enableHexView( void )
 					ui->functionCode->currentText() ) );
 
 	bool b_enabled =
-		func == _FC_READ_HOLDING_REGISTERS ||
-		func == _FC_READ_INPUT_REGISTERS;
+		func == MODBUS_FC_READ_HOLDING_REGISTERS ||
+		func == MODBUS_FC_READ_INPUT_REGISTERS;
 
 	ui->checkBoxHexData->setEnabled( b_enabled );
 }
@@ -335,28 +335,28 @@ void MainWindow::sendModbusRequest( void )
 
 	switch( func )
 	{
-		case _FC_READ_COILS:
+		case MODBUS_FC_READ_COILS:
 			ret = modbus_read_bits( m_modbus, addr, num, dest );
 			break;
-		case _FC_READ_DISCRETE_INPUTS:
+		case MODBUS_FC_READ_DISCRETE_INPUTS:
 			ret = modbus_read_input_bits( m_modbus, addr, num, dest );
 			break;
-		case _FC_READ_HOLDING_REGISTERS:
+		case MODBUS_FC_READ_HOLDING_REGISTERS:
 			ret = modbus_read_registers( m_modbus, addr, num, dest16 );
 			is16Bit = true;
 			break;
-		case _FC_READ_INPUT_REGISTERS:
+		case MODBUS_FC_READ_INPUT_REGISTERS:
 			ret = modbus_read_input_registers( m_modbus, addr, num, dest16 );
 			is16Bit = true;
 			break;
-		case _FC_WRITE_SINGLE_COIL:
+		case MODBUS_FC_WRITE_SINGLE_COIL:
 			ret = modbus_write_bit( m_modbus, addr,
 					ui->regTable->item( 0, DataColumn )->
 						text().toInt(0, 0) ? 1 : 0 );
 			writeAccess = true;
 			num = 1;
 			break;
-		case _FC_WRITE_SINGLE_REGISTER:
+		case MODBUS_FC_WRITE_SINGLE_REGISTER:
 			ret = modbus_write_register( m_modbus, addr,
 					ui->regTable->item( 0, DataColumn )->
 						text().toInt(0, 0) );
@@ -364,7 +364,7 @@ void MainWindow::sendModbusRequest( void )
 			num = 1;
 			break;
 
-		case _FC_WRITE_MULTIPLE_COILS:
+		case MODBUS_FC_WRITE_MULTIPLE_COILS:
 		{
 			uint8_t * data = new uint8_t[num];
 			for( int i = 0; i < num; ++i )
@@ -377,7 +377,7 @@ void MainWindow::sendModbusRequest( void )
 			writeAccess = true;
 			break;
 		}
-		case _FC_WRITE_MULTIPLE_REGISTERS:
+		case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
 		{
 			uint16_t * data = new uint16_t[num];
 			for( int i = 0; i < num; ++i )
