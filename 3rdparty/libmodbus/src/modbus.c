@@ -1599,13 +1599,13 @@ int modbus_write_and_read_registers(modbus_t *ctx,
 
 /* Send a request to get the slave ID of the device (only available in serial
    communication). */
-int modbus_report_slave_id(modbus_t *ctx, uint8_t *dest)
+int modbus_report_slave_id(modbus_t *ctx, int max_dest, uint8_t *dest)
 {
     int rc;
     int req_length;
     uint8_t req[_MIN_REQ_LENGTH];
 
-    if (ctx == NULL) {
+    if (ctx == NULL || max_dest <= 0) {
         errno = EINVAL;
         return -1;
     }
@@ -1632,9 +1632,9 @@ int modbus_report_slave_id(modbus_t *ctx, uint8_t *dest)
 
         offset = ctx->backend->header_length + 2;
 
-        /* Byte count, slave id, run indicator status,
-           additional data */
-        for (i=0; i < rc; i++) {
+        /* Byte count, slave id, run indicator status and
+           additional data. Truncate copy to max_dest. */
+        for (i=0; i < rc && i < max_dest; i++) {
             dest[i] = rsp[offset + i];
         }
     }
@@ -2009,8 +2009,8 @@ void modbus_poll(modbus_t* ctx)
 			addr = ( msg[o+2] << 8 ) | msg[o+3];
 			nb = ( msg[o+4] << 8 ) | msg[o+5];
 		}
-        if (ctx->monitor_add_item) {
-		    ctx->monitor_add_item(ctx, isQuery,				/* is query */
+		if (ctx->monitor_add_item) {
+			ctx->monitor_add_item(ctx, isQuery,				/* is query */
 					slave,				/* slave */
 					func,				/* func */
 					addr,				/* addr */
@@ -2019,7 +2019,7 @@ void modbus_poll(modbus_t* ctx)
 					ctx->last_crc_received
 					//( msg[msg_len-2] << 8 ) | msg[msg_len-1]	/* CRC */
 				);
-        }
+		}
 	}
 }
 

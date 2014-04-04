@@ -85,8 +85,14 @@ void SerialSettingsWidget::changeSerialPort( int )
 		settings.setValue( "serialdatabits", ui->dataBits->currentText() );
 		settings.setValue( "serialstopbits", ui->stopBits->currentText() );
 #ifdef Q_OS_WIN32
-		const QString port = embracedString( ports[iface].friendName ) +
-									":";
+		QString port = ports[iface].portName;
+
+		// is it a serial port in the range COM1 .. COM9?
+		if ( port.startsWith( "COM" ) )
+		{
+			// use windows communication device name "\\.\COMn"
+			port = "\\\\.\\" + port;
+		}
 #else
 		const QString port = ports[iface].physName;
 #endif

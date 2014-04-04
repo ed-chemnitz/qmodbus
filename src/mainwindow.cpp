@@ -1,7 +1,7 @@
 /*
  * mainwindow.cpp - implementation of MainWindow class
  *
- * Copyright (c) 2009-2010 Tobias Doerffel / Electronic Design Chemnitz
+ * Copyright (c) 2009-2013 Tobias Doerffel / Electronic Design Chemnitz
  *
  * This file is part of QModBus - http://qmodbus.sourceforge.net
  *

@@ -1,7 +1,7 @@
 /*
  * BatchProcessor.cpp - implementation of BatchProcessor class
  *
- * Copyright (c) 2011 Tobias Doerffel
+ * Copyright (c) 2011-2013 Tobias Doerffel
  *
  * This file is part of QModBus - http://qmodbus.sourceforge.net
  *

@@ -45,7 +45,7 @@ win32 {
     SOURCES += 3rdparty/qextserialport/win_qextserialport.cpp \
            3rdparty/qextserialport/qextserialenumerator_win.cpp
     DEFINES += _TTY_WIN_  WINVER=0x0501
-    LIBS += -lsetupapi -lwsock32
+    LIBS += -lsetupapi -lws2_32
 }
 
 FORMS += forms/mainwindow.ui \
