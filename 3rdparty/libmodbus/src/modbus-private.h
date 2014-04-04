@@ -53,7 +53,8 @@ MODBUS_BEGIN_DECLS
 
 typedef enum {
     _MODBUS_BACKEND_TYPE_RTU=0,
-    _MODBUS_BACKEND_TYPE_TCP
+    _MODBUS_BACKEND_TYPE_TCP, 
+    _MODBUS_BACKEND_TYPE_ASCII
 } modbus_backend_type_t;
 
 /*
@@ -114,6 +115,8 @@ struct _modbus {
 	uint16_t last_crc_received;
     const modbus_backend_t *backend;
     void *backend_data;
+    modbus_monitor_add_item_fnc_t monitor_add_item;
+    modbus_monitor_raw_data_fnc_t monitor_raw_data;
 };
 
 void _modbus_init_common(modbus_t *ctx);

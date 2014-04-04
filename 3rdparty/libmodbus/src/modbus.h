@@ -179,7 +179,13 @@ typedef enum
     MODBUS_ERROR_RECOVERY_PROTOCOL      = (1<<2),
 } modbus_error_recovery_mode;
 
-MODBUS_API int modbus_set_slave(modbus_t* ctx, int slave);
+typedef void (*modbus_monitor_add_item_fnc_t)(modbus_t *ctx,
+        uint8_t isOut, uint8_t slave, uint8_t func, uint16_t addr, uint16_t nb, 
+        uint16_t expectedCRC, uint16_t actualCRC );
+typedef void (*modbus_monitor_raw_data_fnc_t)(modbus_t *ctx,
+        uint8_t *data, uint8_t dataLen, uint8_t addNewline);
+
+MODBUS_API int modbus_set_slave(modbus_t *ctx, int slave);
 MODBUS_API int modbus_set_error_recovery(modbus_t *ctx, modbus_error_recovery_mode error_recovery);
 MODBUS_API int modbus_set_socket(modbus_t *ctx, int s);
 MODBUS_API int modbus_get_socket(modbus_t *ctx);
@@ -231,6 +237,10 @@ MODBUS_API int modbus_reply(modbus_t *ctx, const uint8_t *req,
                             int req_length, modbus_mapping_t *mb_mapping);
 MODBUS_API int modbus_reply_exception(modbus_t *ctx, const uint8_t *req,
                                       unsigned int exception_code);
+MODBUS_API void modbus_register_monitor_add_item_fnc(modbus_t *ctx,
+                                                    modbus_monitor_add_item_fnc_t cb); 
+MODBUS_API void modbus_register_monitor_raw_data_fnc(modbus_t *ctx,
+                                                    modbus_monitor_raw_data_fnc_t cb); 
 
 void modbus_poll(modbus_t *ctx);
 
@@ -260,9 +270,7 @@ MODBUS_API void modbus_set_float_dcba(float f, uint16_t *dest);
 
 #include "modbus-tcp.h"
 #include "modbus-rtu.h"
-
-void busMonitorAddItem( uint8_t isOut, uint8_t slave, uint8_t func, uint16_t addr, uint16_t nb, uint16_t expectedCRC, uint16_t actualCRC );
-void busMonitorRawData( uint8_t * data, uint8_t dataLen, uint8_t addNewline );
+#include "modbus-ascii.h"
 
 MODBUS_END_DECLS
 
