@@ -130,7 +130,7 @@ int modbus_flush(modbus_t *ctx)
     }
 
     rc = ctx->backend->flush(ctx);
-    if (rc != -1 && ctx->debug) {
+    if (rc > 0 && ctx->debug) {
         /* Not all backends are able to return the number of bytes flushed */
         printf("Bytes flushed (%d)\n", rc);
     }
@@ -179,6 +179,10 @@ static int send_msg(modbus_t *ctx, uint8_t *msg, int msg_length)
 {
     int rc;
     int i;
+
+    if (ctx->error_recovery & MODBUS_ERROR_RECOVERY_PROTOCOL) {
+        modbus_flush(ctx); // Without this we might receive junk
+    }
 
     msg_length = ctx->backend->send_msg_pre(msg, msg_length);
 
@@ -401,6 +405,7 @@ int _modbus_receive_msg(modbus_t *ctx, uint8_t *msg, msg_type_t msg_type)
                     modbus_flush(ctx);
                 } else if (errno == EBADF) {
                     modbus_close(ctx);
+                    _sleep_response_timeout(ctx);
                     modbus_connect(ctx);
                 }
                 errno = saved_errno;
@@ -428,11 +433,11 @@ int _modbus_receive_msg(modbus_t *ctx, uint8_t *msg, msg_type_t msg_type)
             return -1;
         }
 
-		// -- BEGIN QMODBUS MODIFICATION --
+		/* -- BEGIN QMODBUS MODIFICATION -- */
         if (ctx->monitor_raw_data) {
 		    ctx->monitor_raw_data(ctx, msg + msg_length, rc, ( step == _STEP_DATA && length_to_read-rc == 0 ) ? 1 : 0 );
-		    // -- END QMODBUS MODIFICATION --
         }
+                /* -- END QMODBUS MODIFICATION -- */
 
         /* Display the hex code of each character received */
         if (ctx->debug) {
@@ -528,15 +533,17 @@ static int check_confirmation(modbus_t *ctx, uint8_t *req,
     const int offset = ctx->backend->header_length;
     const int function = rsp[offset];
 
-	// -- BEGIN QMODBUS MODIFICATION --
-	int s_crc = 0; // TODO
+	/* BEGIN QMODBUS MODIFICATION */
+	int s_crc = 0; /* TODO */
     if (ctx->monitor_add_item) {
-	    ctx->monitor_add_item(ctx, 1, req[0], req[1],
-							( req[2] << 8 ) + req[3],
-							( req[4] << 8 ) + req[5],
-							s_crc, s_crc );
+        ctx->monitor_add_item(ctx, 1,
+                req[offset - 1],  /* slave */
+                function,  /* func */
+                ( req[offset + 1] << 8 ) + req[offset + 2], /* addr */
+                ( req[offset + 3] << 8 ) + req[offset + 4], /* nb */
+                s_crc, s_crc );
     }
-	// -- END QMODBUS MODIFICATION --
+	/* END QMODBUS MODIFICATION */
 
     if (ctx->backend->pre_check_confirmation) {
         rc = ctx->backend->pre_check_confirmation(ctx, req, rsp, rsp_length);
@@ -634,7 +641,7 @@ static int check_confirmation(modbus_t *ctx, uint8_t *req,
 		{
 			case MODBUS_FC_READ_COILS:
 			case MODBUS_FC_READ_DISCRETE_INPUTS:
-				num_items = rsp_nb_value*8;
+				num_items = rsp_nb_value * 8;
 				break;
 			case MODBUS_FC_WRITE_AND_READ_REGISTERS:
 			case MODBUS_FC_READ_HOLDING_REGISTERS:

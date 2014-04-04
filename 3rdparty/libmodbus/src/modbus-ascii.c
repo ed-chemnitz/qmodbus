@@ -42,6 +42,8 @@
 static int _modbus_ascii_select(modbus_t *ctx, fd_set *rset,
                        struct timeval *tv, int length_to_read);
 
+static int _modbus_ascii_flush(modbus_t *);
+
 /* Define the slave ID of the remote device to talk in master mode or set the
  * internal slave ID in slave mode */
 static int _modbus_set_slave(modbus_t *ctx, int slave)
@@ -300,7 +302,6 @@ static ssize_t _modbus_ascii_recv_char(modbus_t *ctx, char *p_char_rsp, uint8_t 
             return 0;
         }
     }
-
 #if defined(_WIN32)
     size = win32_ser_read(&((modbus_ascii_t *)ctx->backend_data)->w_ser, p_char_rsp, 1);
 #else
@@ -315,6 +316,7 @@ static ssize_t _modbus_ascii_recv(modbus_t *ctx, uint8_t *rsp, int rsp_length)
     char char_resp;
     uint8_t nibble_resp;
 
+    // Call here without select, because we are already selected
     if (_modbus_ascii_recv_char(ctx, &char_resp, 0) != 1) {
         return 0;
     }
@@ -333,12 +335,10 @@ static ssize_t _modbus_ascii_recv(modbus_t *ctx, uint8_t *rsp, int rsp_length)
     return 1;
 }
 
-static int _modbus_ascii_flush(modbus_t *);
-
 static int _modbus_ascii_pre_check_confirmation(modbus_t *ctx, const uint8_t *req,
                                               const uint8_t *rsp, int rsp_length)
 {
-    /* Check responding slave is the slave we requested (except for broacast
+    /* Check responding slave is the slave we requested (except for broadcast
      * request) */
     if (req[1] != rsp[1] && req[1] != MODBUS_BROADCAST_ADDRESS) {
         if (ctx->debug) {
