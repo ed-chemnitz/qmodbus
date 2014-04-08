@@ -1944,19 +1944,27 @@ size_t strlcpy(char *dest, const char *src, size_t dest_size)
 void modbus_register_monitor_add_item_fnc(modbus_t *ctx,
                                          modbus_monitor_add_item_fnc_t cb) 
 {
-    ctx->monitor_add_item = cb; 
+    if (ctx) {	    
+        ctx->monitor_add_item = cb; 
+    }
 }
 
 void modbus_register_monitor_raw_data_fnc(modbus_t *ctx,
                                          modbus_monitor_raw_data_fnc_t cb) 
 {
-    ctx->monitor_raw_data = cb; 
+    if (ctx) {
+        ctx->monitor_raw_data = cb;
+    } 
 } 
 
 void modbus_poll(modbus_t* ctx)
 {
 	uint8_t msg[MAX_MESSAGE_LENGTH];
 	uint8_t msg_len = 0;
+
+    	if (ctx == NULL) {
+        	return;
+    	}
 
 	modbus_set_response_timeout( ctx, 0, 500);
 	const int ret = _modbus_receive_msg( ctx, &msg_len, MSG_CONFIRMATION );	/* wait for 0.5 ms */

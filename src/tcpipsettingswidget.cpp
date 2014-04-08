@@ -36,6 +36,7 @@ void TcpIpSettingsWidget::changeModbusInterface(const QString &address, int port
         QMessageBox::critical( this, tr( "Connection failed" ),
             tr( "Could not connect tcp/ip port!" ) );
         ui->btnApply->setEnabled(true);
+    	releaseTcpModbus();
     }
 }
 

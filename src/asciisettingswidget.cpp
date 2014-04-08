@@ -32,5 +32,6 @@ void AsciiSettingsWidget::changeModbusInterface(const QString& port, char parity
 	{
 		QMessageBox::critical( this, tr( "Connection failed" ),
 			tr( "Could not connect serial port!" ) );
+		releaseSerialModbus();
 	}
 }
