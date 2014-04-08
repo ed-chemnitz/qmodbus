@@ -514,8 +514,10 @@ void MainWindow::onRtuPortActive(bool active)
 {
 	if (active) {
 		m_modbus = ui->rtuSettingsWidget->modbus();
-		modbus_register_monitor_add_item_fnc(m_modbus, MainWindow::stBusMonitorAddItem);
-		modbus_register_monitor_raw_data_fnc(m_modbus, MainWindow::stBusMonitorRawData);
+		if (m_modbus) {
+			modbus_register_monitor_add_item_fnc(m_modbus, MainWindow::stBusMonitorAddItem);
+			modbus_register_monitor_raw_data_fnc(m_modbus, MainWindow::stBusMonitorRawData);
+		}
 	}
 	else {
 		m_modbus = NULL;
@@ -526,8 +528,10 @@ void MainWindow::onAsciiPortActive(bool active)
 {
     if (active) {
         m_modbus = ui->asciiSettingsWidget->modbus();
-        modbus_register_monitor_add_item_fnc(m_modbus, MainWindow::stBusMonitorAddItem);
-        modbus_register_monitor_raw_data_fnc(m_modbus, MainWindow::stBusMonitorRawData);
+        if (m_modbus) {
+            modbus_register_monitor_add_item_fnc(m_modbus, MainWindow::stBusMonitorAddItem);
+            modbus_register_monitor_raw_data_fnc(m_modbus, MainWindow::stBusMonitorRawData);
+        }
     }
     else {
         m_modbus = NULL;
@@ -538,8 +542,10 @@ void MainWindow::onTcpPortActive(bool active)
 {
 	if (active) {
 		m_modbus = ui->tcpSettingsWidget->modbus();
-        modbus_register_monitor_add_item_fnc(m_modbus, MainWindow::stBusMonitorAddItem);
-        modbus_register_monitor_raw_data_fnc(m_modbus, MainWindow::stBusMonitorRawData);
+		if (m_modbus) {
+			modbus_register_monitor_add_item_fnc(m_modbus, MainWindow::stBusMonitorAddItem);
+			modbus_register_monitor_raw_data_fnc(m_modbus, MainWindow::stBusMonitorRawData);
+		}
 	}
 	else {
 		m_modbus = NULL;
