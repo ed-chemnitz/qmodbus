@@ -176,7 +176,7 @@ typedef enum
 {
     MODBUS_ERROR_RECOVERY_NONE          = 0,
     MODBUS_ERROR_RECOVERY_LINK          = (1<<1),
-    MODBUS_ERROR_RECOVERY_PROTOCOL      = (1<<2),
+    MODBUS_ERROR_RECOVERY_PROTOCOL      = (1<<2)
 } modbus_error_recovery_mode;
 
 typedef void (*modbus_monitor_add_item_fnc_t)(modbus_t *ctx,
@@ -229,7 +229,6 @@ MODBUS_API void modbus_mapping_free(modbus_mapping_t *mb_mapping);
 MODBUS_API int modbus_send_raw_request(modbus_t *ctx, uint8_t *raw_req, int raw_req_length);
 
 MODBUS_API int modbus_receive(modbus_t *ctx, uint8_t *req);
-MODBUS_API int modbus_receive_from(modbus_t *ctx, int sockfd, uint8_t *req);
 
 MODBUS_API int modbus_receive_confirmation(modbus_t *ctx, uint8_t *rsp);
 
