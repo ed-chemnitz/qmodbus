@@ -183,6 +183,9 @@
 /* Version number of package */
 #define VERSION "3.1.1"
 
+/* _ */
+#define WINVER 0x0501
+
 /* Number of bits in a file offset, on hosts where this is settable. */
 /* #undef _FILE_OFFSET_BITS */
 
