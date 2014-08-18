@@ -2,7 +2,7 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define to 1 if you have the `accept4' function. */
-#define HAVE_ACCEPT4 1
+//#define HAVE_ACCEPT4 1
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #define HAVE_ARPA_INET_H 1
@@ -12,11 +12,11 @@
 
 /* Define to 1 if you have the declaration of `TIOCM_RTS', and to 0 if you
    don't. */
-#define HAVE_DECL_TIOCM_RTS 1
+//#define HAVE_DECL_TIOCM_RTS 1
 
 /* Define to 1 if you have the declaration of `TIOCSRS485', and to 0 if you
    don't. */
-#define HAVE_DECL_TIOCSRS485 1
+//#define HAVE_DECL_TIOCSRS485 1
 
 /* Define to 1 if you have the declaration of `__CYGWIN__', and to 0 if you
    don't. */
@@ -184,7 +184,7 @@
 #define VERSION "3.1.1"
 
 /* _ */
-#define WINVER 0x0501
+//#define WINVER 0x0501
 
 /* Number of bits in a file offset, on hosts where this is settable. */
 /* #undef _FILE_OFFSET_BITS */
