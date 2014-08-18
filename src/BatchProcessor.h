@@ -1,7 +1,7 @@
 /*
  * BatchProcessor.h - header file for BatchProcessor class
  *
- * Copyright (c) 2011 Tobias Doerffel / Electronic Design Chemnitz
+ * Copyright (c) 2011-2014 Tobias Doerffel / Electronic Design Chemnitz
  *
  * This file is part of QModBus - http://qmodbus.sourceforge.net
  *
@@ -25,9 +25,9 @@
 #ifndef _BATCH_PROCESSOR_H
 #define _BATCH_PROCESSOR_H
 
-#include <QtCore/QFile>
-#include <QtCore/QTimer>
-#include <QtGui/QDialog>
+#include <QFile>
+#include <QTimer>
+#include <QDialog>
 
 #include "modbus.h"
 

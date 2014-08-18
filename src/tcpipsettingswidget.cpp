@@ -30,7 +30,7 @@ void TcpIpSettingsWidget::changeModbusInterface(const QString &address, int port
 {
     releaseTcpModbus();
 
-    m_tcpModbus = modbus_new_tcp( address.toAscii().constData(), portNbr );
+    m_tcpModbus = modbus_new_tcp( address.toLatin1().constData(), portNbr );
     if( modbus_connect( m_tcpModbus ) == -1 )
     {
         QMessageBox::critical( this, tr( "Connection failed" ),

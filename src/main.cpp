@@ -1,7 +1,7 @@
 /*
  * main.cpp - main file for QModBus
  *
- * Copyright (c) 2009-2013 Tobias Doerffel / Electronic Design Chemnitz
+ * Copyright (c) 2009-2014 Tobias Doerffel / Electronic Design Chemnitz
  *
  * This file is part of QModBus - http://qmodbus.sourceforge.net
  *
@@ -23,7 +23,7 @@
  */
 
 
-#include <QtGui/QApplication>
+#include <QApplication>
 #include "mainwindow.h"
 
 MainWindow * globalMainWin = NULL;

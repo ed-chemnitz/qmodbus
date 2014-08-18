@@ -7,6 +7,12 @@ OBJECTS_DIR = generated
 UI_DIR      = generated
 RCC_DIR     = generated
 
+QT += gui
+
+greaterThan(QT_MAJOR_VERSION, 4) {
+    QT += widgets
+}
+
 SOURCES += src/main.cpp \
     src/mainwindow.cpp \
     src/BatchProcessor.cpp \

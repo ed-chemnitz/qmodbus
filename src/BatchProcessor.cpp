@@ -1,7 +1,7 @@
 /*
  * BatchProcessor.cpp - implementation of BatchProcessor class
  *
- * Copyright (c) 2011-2013 Tobias Doerffel
+ * Copyright (c) 2011-2014 Tobias Doerffel
  *
  * This file is part of QModBus - http://qmodbus.sourceforge.net
  *
@@ -22,10 +22,10 @@
  *
  */
 
-#include <QtCore/QDebug>
-#include <QtCore/QDateTime>
-#include <QtGui/QFileDialog>
-#include <QtGui/QMessageBox>
+#include <QDebug>
+#include <QDateTime>
+#include <QFileDialog>
+#include <QMessageBox>
 
 #include <errno.h>
 

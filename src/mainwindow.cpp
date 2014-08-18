@@ -22,11 +22,11 @@
  *
  */
 
-#include <QtCore/QSettings>
-#include <QtCore/QDebug>
-#include <QtCore/QTimer>
-#include <QtGui/QMessageBox>
-#include <QtGui/QScrollBar>
+#include <QSettings>
+#include <QDebug>
+#include <QTimer>
+#include <QMessageBox>
+#include <QScrollBar>
 
 #include <errno.h>
 
