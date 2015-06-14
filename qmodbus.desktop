@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=QModBus
+Comment=ModBus master emulator with GUI
+Exec=/usr/share/qmodbus/build/qmodbus
+Icon=/usr/share/qmodbus/data/logo.png
+Terminal=false
+Categories=Development;Electronics;
+Keywords=embedded electronics;electronics;microcontroller;
+X-Desktop-File-Install-Version=0.01
