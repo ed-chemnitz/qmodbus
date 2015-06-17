@@ -26,7 +26,7 @@ int SerialSettingsWidget::setupModbusPort()
 	int i = 0;
 	foreach( QextPortInfo port, QextSerialEnumerator::getPorts() )
 	{
-		ui->serialPort->addItem( port.friendName );
+		ui->serialPort->addItem( port.physName );
 		if( port.friendName == s.value( "serialinterface" ) )
 		{
 			portIndex = i;
