@@ -37,7 +37,7 @@ struct QextPortInfo {
 
 #ifdef Q_OS_WIN
 #ifdef QT_GUI_LIB
-#include <QtGui/QWidget>
+#include <QWidget>
 class QextSerialEnumerator;
 
 class QextSerialRegistrationWidget : public QWidget
