@@ -30,6 +30,8 @@ private slots:
 
     void on_ipEd2_textChanged(const QString &arg1);
 
+    void on_ipEd3_textChanged(const QString &arg1);
+
 private:
     Ui::IPAddressCtrl *ui;
 };

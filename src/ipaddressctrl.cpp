@@ -40,6 +40,7 @@ void IPAddressCtrl::on_ipEd0_textChanged(const QString &arg1)
     if (arg1.length() == 3) {
         ui->ipEd1->setFocus(Qt::OtherFocusReason);
     }
+    emit textChanged(text());
 }
 
 void IPAddressCtrl::on_ipEd1_textChanged(const QString &arg1)
@@ -47,6 +48,7 @@ void IPAddressCtrl::on_ipEd1_textChanged(const QString &arg1)
     if (arg1.length() == 3) {
         ui->ipEd2->setFocus(Qt::OtherFocusReason);
     }
+    emit textChanged(text());
 }
 
 void IPAddressCtrl::on_ipEd2_textChanged(const QString &arg1)
@@ -54,4 +56,10 @@ void IPAddressCtrl::on_ipEd2_textChanged(const QString &arg1)
     if (arg1.length() == 3) {
         ui->ipEd3->setFocus(Qt::OtherFocusReason);
     }
+    emit textChanged(text());
+}
+
+void IPAddressCtrl::on_ipEd3_textChanged(const QString &arg1)
+{
+    emit textChanged(text());
 }
