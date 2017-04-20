@@ -1,0 +1,5 @@
+qmodbus (1.0-0) unstable; urgency=medium
+
+  * Initial package version
+
+ -- Jean-Samuel Reynaud <js.reynaud@gmail.com>  Thu, 20 Apr 2017 11:07:59 +0200
