@@ -52,9 +52,14 @@ MainWindow::MainWindow( QWidget * _parent ) :
 {
 	ui->setupUi(this);
 
-	connect( ui->rtuSettingsWidget, SIGNAL(serialPortActive(bool)), this , SLOT(onRtuPortActive(bool)));
-    connect( ui->asciiSettingsWidget, SIGNAL(serialPortActive(bool)), this , SLOT(onAsciiPortActive(bool)));
-	connect( ui->tcpSettingsWidget,   SIGNAL(tcpPortActive(bool)), this, SLOT(onTcpPortActive(bool)));
+	connect( ui->rtuSettingsWidget,   SIGNAL(serialPortActive(bool)), this, SLOT(onRtuPortActive(bool)));
+	connect( ui->asciiSettingsWidget, SIGNAL(serialPortActive(bool)), this, SLOT(onAsciiPortActive(bool)));
+	connect( ui->tcpSettingsWidget,   SIGNAL(tcpPortActive(bool)),    this, SLOT(onTcpPortActive(bool)));
+
+	connect( ui->rtuSettingsWidget,   SIGNAL(connectionError(const QString&)), this, SLOT(onConnectionError(const QString&)));
+	connect( ui->asciiSettingsWidget, SIGNAL(connectionError(const QString&)), this, SLOT(onConnectionError(const QString&)));
+	connect( ui->tcpSettingsWidget,   SIGNAL(connectionError(const QString&)), this, SLOT(onConnectionError(const QString&)));
+
 	connect( ui->slaveID, SIGNAL( valueChanged( int ) ),
 			this, SLOT( updateRequestPreview() ) );
 	connect( ui->functionCode, SIGNAL( currentIndexChanged( int ) ),
@@ -552,4 +557,7 @@ void MainWindow::onTcpPortActive(bool active)
 	}
 }
 
-
+void MainWindow::onConnectionError(const QString &msg)
+{
+    QMessageBox::critical( this, tr( "Connection failed" ), msg );
+}

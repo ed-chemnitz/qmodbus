@@ -86,6 +86,7 @@ private slots:
     void onRtuPortActive(bool active);
     void onAsciiPortActive(bool active);
     void onTcpPortActive(bool active);
+    void onConnectionError(const QString &msg);
 
 private:
     Ui::MainWindowClass * ui;

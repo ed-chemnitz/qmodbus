@@ -32,6 +32,7 @@ private slots:
 
 signals:
     void tcpPortActive(bool val);
+    void connectionError(const QString &msg);
 
 private:
     Ui::TcpIpSettingsWidget *ui;

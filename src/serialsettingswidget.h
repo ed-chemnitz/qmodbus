@@ -32,6 +32,7 @@ protected:
 
 signals:
 	void serialPortActive(bool active);
+	void connectionError(const QString &msg);
 
 public slots:
 	void changeSerialPort(int);
