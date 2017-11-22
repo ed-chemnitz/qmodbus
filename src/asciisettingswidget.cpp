@@ -3,8 +3,6 @@
 #include "ui_serialsettingswidget.h"
 #include "modbus.h"
 
-#include <QMessageBox>
-
 AsciiSettingsWidget::AsciiSettingsWidget(QWidget *parent) :
     SerialSettingsWidget(parent)
 {

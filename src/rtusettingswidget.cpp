@@ -3,9 +3,6 @@
 #include "ui_serialsettingswidget.h"
 #include "modbus.h"
 
-#include <QMessageBox>
-
-
 RtuSettingsWidget::RtuSettingsWidget(QWidget *parent) :
     SerialSettingsWidget(parent)
 {

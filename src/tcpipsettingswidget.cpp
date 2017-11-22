@@ -2,7 +2,6 @@
 #include "ui_tcpipsettingswidget.h"
 #include "modbus-tcp.h"
 #include <QIntValidator>
-#include <QMessageBox>
 #include <QDebug>
 
 TcpIpSettingsWidget::TcpIpSettingsWidget(QWidget *parent) :

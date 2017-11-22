@@ -1,5 +1,4 @@
 #include <QSettings>
-#include <QMessageBox>
 #include "qextserialenumerator.h"
 #include "serialsettingswidget.h"
 #include "ui_serialsettingswidget.h"
@@ -116,9 +115,7 @@ void SerialSettingsWidget::changeSerialPort( int )
 	}
 	else
 	{
-		QMessageBox::critical( this, tr( "No serial port found" ),
-				tr( "Could not find any serial port "
-						"on this computer!" ) );
+		emit connectionError( tr( "No serial port found" ) );
 	}
 }
 
