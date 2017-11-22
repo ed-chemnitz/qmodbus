@@ -559,5 +559,7 @@ void MainWindow::onTcpPortActive(bool active)
 
 void MainWindow::onConnectionError(const QString &msg)
 {
-    QMessageBox::critical( this, tr( "Connection failed" ), msg );
+    m_statusText->setText( msg );
+
+    m_statusInd->setStyleSheet( "background: red;" );
 }
