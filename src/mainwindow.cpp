@@ -25,7 +25,6 @@
 #include <QSettings>
 #include <QDebug>
 #include <QTimer>
-#include <QMessageBox>
 #include <QScrollBar>
 
 #include <errno.h>
@@ -459,6 +458,8 @@ void MainWindow::sendModbusRequest( void )
 	}
 	else
 	{
+		QString err;
+
 		if( ret < 0 )
 		{
 			if(
@@ -468,24 +469,30 @@ void MainWindow::sendModbusRequest( void )
 					errno == EIO
 																	)
 			{
-				QMessageBox::critical( this, tr( "I/O error" ),
-					tr( "I/O error: did not receive any data from slave." ) );
+				err += tr( "I/O error" );
+				err += ": ";
+				err += tr( "did not receive any data from slave." );
 			}
 			else
 			{
-				QMessageBox::critical( this, tr( "Protocol error" ),
-					tr( "Slave threw exception \"%1\" or "
-						"function not implemented." ).
-								arg( modbus_strerror( errno ) ) );
+				err += tr( "Protocol error" );
+				err += ": ";
+				err += tr( "Slave threw exception '" );
+				err += modbus_strerror( errno );
+				err += tr( "' or function not implemented." );
 			}
 		}
 		else
 		{
-			QMessageBox::critical( this, tr( "Protocol error" ),
-				tr( "Number of registers returned does not "
+			err += tr( "Protocol error" );
+			err += ": ";
+			err += tr( "Number of registers returned does not "
 					"match number of registers "
-							"requested!" ) );
+							"requested!" );
 		}
+
+		if( err.size() > 0 )
+			onConnectionError( err );
 	}
 }
 
