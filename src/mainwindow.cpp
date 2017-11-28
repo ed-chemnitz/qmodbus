@@ -55,9 +55,9 @@ MainWindow::MainWindow( QWidget * _parent ) :
 	connect( ui->asciiSettingsWidget, SIGNAL(serialPortActive(bool)), this, SLOT(onAsciiPortActive(bool)));
 	connect( ui->tcpSettingsWidget,   SIGNAL(tcpPortActive(bool)),    this, SLOT(onTcpPortActive(bool)));
 
-	connect( ui->rtuSettingsWidget,   SIGNAL(connectionError(const QString&)), this, SLOT(onConnectionError(const QString&)));
-	connect( ui->asciiSettingsWidget, SIGNAL(connectionError(const QString&)), this, SLOT(onConnectionError(const QString&)));
-	connect( ui->tcpSettingsWidget,   SIGNAL(connectionError(const QString&)), this, SLOT(onConnectionError(const QString&)));
+	connect( ui->rtuSettingsWidget,   SIGNAL(connectionError(const QString&)), this, SLOT(setStatusError(const QString&)));
+	connect( ui->asciiSettingsWidget, SIGNAL(connectionError(const QString&)), this, SLOT(setStatusError(const QString&)));
+	connect( ui->tcpSettingsWidget,   SIGNAL(connectionError(const QString&)), this, SLOT(setStatusError(const QString&)));
 
 	connect( ui->slaveID, SIGNAL( valueChanged( int ) ),
 			this, SLOT( updateRequestPreview() ) );
@@ -492,7 +492,7 @@ void MainWindow::sendModbusRequest( void )
 		}
 
 		if( err.size() > 0 )
-			onConnectionError( err );
+			setStatusError( err );
 	}
 }
 
@@ -564,7 +564,7 @@ void MainWindow::onTcpPortActive(bool active)
 	}
 }
 
-void MainWindow::onConnectionError(const QString &msg)
+void MainWindow::setStatusError(const QString &msg)
 {
     m_statusText->setText( msg );
 
