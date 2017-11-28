@@ -569,4 +569,6 @@ void MainWindow::setStatusError(const QString &msg)
     m_statusText->setText( msg );
 
     m_statusInd->setStyleSheet( "background: red;" );
+
+    QTimer::singleShot( 2000, this, SLOT( resetStatus() ) );
 }
