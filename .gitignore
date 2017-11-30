@@ -1,0 +1,6 @@
+debian/debhelper-build-stamp
+debian/files
+debian/qmodbus.debhelper.log
+debian/qmodbus.substvars
+debian/qmodbus/
+obj-x86_64-linux-gnu/

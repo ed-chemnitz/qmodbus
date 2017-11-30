@@ -1,0 +1,13 @@
+Source: qmodbus
+Section: electronic
+Priority: optional
+Maintainer: Jean-Samuel Reynaud <js.reynaud@gmail.com>
+Build-Depends: debhelper (>= 4.0.0), cmake, libqt4-dev
+Standards-Version: 3.6.1.1
+
+Package: qmodbus
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: QT modbus tools
+  A tools to query modbus slaves on RTU/TCP or ASCII mode.
+ Original web page http://qmodbus.sourceforge.net
