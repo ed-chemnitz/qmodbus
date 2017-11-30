@@ -2,7 +2,6 @@
 #include "ui_tcpipsettingswidget.h"
 #include "modbus-tcp.h"
 #include <QIntValidator>
-#include <QMessageBox>
 #include <QDebug>
 
 TcpIpSettingsWidget::TcpIpSettingsWidget(QWidget *parent) :
@@ -33,8 +32,8 @@ void TcpIpSettingsWidget::changeModbusInterface(const QString &address, int port
     m_tcpModbus = modbus_new_tcp( address.toLatin1().constData(), portNbr );
     if( modbus_connect( m_tcpModbus ) == -1 )
     {
-        QMessageBox::critical( this, tr( "Connection failed" ),
-            tr( "Could not connect tcp/ip port!" ) );
+        emit connectionError( tr( "Could not connect tcp/ip port!" ) );
+
         ui->btnApply->setEnabled(true);
     	releaseTcpModbus();
     }

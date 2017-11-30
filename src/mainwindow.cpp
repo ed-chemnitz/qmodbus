@@ -25,7 +25,6 @@
 #include <QSettings>
 #include <QDebug>
 #include <QTimer>
-#include <QMessageBox>
 #include <QScrollBar>
 
 #include <errno.h>
@@ -52,9 +51,14 @@ MainWindow::MainWindow( QWidget * _parent ) :
 {
 	ui->setupUi(this);
 
-	connect( ui->rtuSettingsWidget, SIGNAL(serialPortActive(bool)), this , SLOT(onRtuPortActive(bool)));
-    connect( ui->asciiSettingsWidget, SIGNAL(serialPortActive(bool)), this , SLOT(onAsciiPortActive(bool)));
-	connect( ui->tcpSettingsWidget,   SIGNAL(tcpPortActive(bool)), this, SLOT(onTcpPortActive(bool)));
+	connect( ui->rtuSettingsWidget,   SIGNAL(serialPortActive(bool)), this, SLOT(onRtuPortActive(bool)));
+	connect( ui->asciiSettingsWidget, SIGNAL(serialPortActive(bool)), this, SLOT(onAsciiPortActive(bool)));
+	connect( ui->tcpSettingsWidget,   SIGNAL(tcpPortActive(bool)),    this, SLOT(onTcpPortActive(bool)));
+
+	connect( ui->rtuSettingsWidget,   SIGNAL(connectionError(const QString&)), this, SLOT(setStatusError(const QString&)));
+	connect( ui->asciiSettingsWidget, SIGNAL(connectionError(const QString&)), this, SLOT(setStatusError(const QString&)));
+	connect( ui->tcpSettingsWidget,   SIGNAL(connectionError(const QString&)), this, SLOT(setStatusError(const QString&)));
+
 	connect( ui->slaveID, SIGNAL( valueChanged( int ) ),
 			this, SLOT( updateRequestPreview() ) );
 	connect( ui->functionCode, SIGNAL( currentIndexChanged( int ) ),
@@ -454,6 +458,8 @@ void MainWindow::sendModbusRequest( void )
 	}
 	else
 	{
+		QString err;
+
 		if( ret < 0 )
 		{
 			if(
@@ -463,24 +469,30 @@ void MainWindow::sendModbusRequest( void )
 					errno == EIO
 																	)
 			{
-				QMessageBox::critical( this, tr( "I/O error" ),
-					tr( "I/O error: did not receive any data from slave." ) );
+				err += tr( "I/O error" );
+				err += ": ";
+				err += tr( "did not receive any data from slave." );
 			}
 			else
 			{
-				QMessageBox::critical( this, tr( "Protocol error" ),
-					tr( "Slave threw exception \"%1\" or "
-						"function not implemented." ).
-								arg( modbus_strerror( errno ) ) );
+				err += tr( "Protocol error" );
+				err += ": ";
+				err += tr( "Slave threw exception '" );
+				err += modbus_strerror( errno );
+				err += tr( "' or function not implemented." );
 			}
 		}
 		else
 		{
-			QMessageBox::critical( this, tr( "Protocol error" ),
-				tr( "Number of registers returned does not "
+			err += tr( "Protocol error" );
+			err += ": ";
+			err += tr( "Number of registers returned does not "
 					"match number of registers "
-							"requested!" ) );
+							"requested!" );
 		}
+
+		if( err.size() > 0 )
+			setStatusError( err );
 	}
 }
 
@@ -552,4 +564,11 @@ void MainWindow::onTcpPortActive(bool active)
 	}
 }
 
+void MainWindow::setStatusError(const QString &msg)
+{
+    m_statusText->setText( msg );
 
+    m_statusInd->setStyleSheet( "background: red;" );
+
+    QTimer::singleShot( 2000, this, SLOT( resetStatus() ) );
+}

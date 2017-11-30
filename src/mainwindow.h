@@ -79,13 +79,14 @@ private slots:
     void updateRegisterView( void );
     void enableHexView( void );
     void sendModbusRequest( void );
-    void resetStatus( void );
     void pollForDataOnBus( void );
     void openBatchProcessor();
     void aboutQModBus( void );
     void onRtuPortActive(bool active);
     void onAsciiPortActive(bool active);
     void onTcpPortActive(bool active);
+    void resetStatus( void );
+    void setStatusError(const QString &msg);
 
 private:
     Ui::MainWindowClass * ui;
