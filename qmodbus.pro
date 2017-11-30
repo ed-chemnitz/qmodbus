@@ -1,11 +1,6 @@
-TARGET = QModBus
+TARGET = qmodbus
 TEMPLATE = app
 VERSION = 0.1.0
-
-MOC_DIR     = generated
-OBJECTS_DIR = generated
-UI_DIR      = generated
-RCC_DIR     = generated
 
 QT += gui
 
