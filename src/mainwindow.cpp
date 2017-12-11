@@ -24,7 +24,6 @@
 
 #include <QSettings>
 #include <QDebug>
-#include <QTimer>
 #include <QScrollBar>
 
 #include <errno.h>
@@ -77,7 +76,7 @@ MainWindow::MainWindow( QWidget * _parent ) :
 			this, SLOT( updateRegisterView() ) );
 
 	connect( ui->sendBtn, SIGNAL( clicked() ),
-			this, SLOT( sendModbusRequest() ) );
+			this, SLOT( onSendButtonPress() ) );
 
 	connect( ui->clearBusMonTable, SIGNAL( clicked() ),
 			this, SLOT( clearBusMonTable() ) );
@@ -105,6 +104,9 @@ MainWindow::MainWindow( QWidget * _parent ) :
 	QTimer * t = new QTimer( this );
 	connect( t, SIGNAL(timeout()), this, SLOT(pollForDataOnBus()));
 	t->start( 5 );
+
+	m_poll_timer = new QTimer( this );
+	connect( m_poll_timer, SIGNAL(timeout()), this, SLOT(sendModbusRequest()));
 }
 
 
@@ -121,7 +123,8 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
 		if( m_modbus != NULL )
 			m_poll = true;
 
-		ui->sendBtn->setText( tr("Poll") );
+		if( ! m_poll_timer->isActive() )
+			ui->sendBtn->setText( tr("Poll") );
 	}
 }
 
@@ -131,7 +134,29 @@ void MainWindow::keyReleaseEvent(QKeyEvent* event)
 	{
 		m_poll = false;
 
+		if( ! m_poll_timer->isActive() )
+			ui->sendBtn->setText( tr("Send") );
+	}
+}
+
+void MainWindow::onSendButtonPress( void )
+{
+	//if already polling then stop
+	if( m_poll_timer->isActive() )
+	{
+		m_poll_timer->stop();
 		ui->sendBtn->setText( tr("Send") );
+	}
+	else
+	{
+		//if polling requested then enable timer
+		if( m_poll )
+		{
+			m_poll_timer->start( 1000 );
+			ui->sendBtn->setText( tr("Stop") );
+		}
+
+		sendModbusRequest();
 	}
 }
 
