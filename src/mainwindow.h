@@ -99,6 +99,7 @@ private:
     QWidget * m_statusInd;
     QLabel * m_statusText;
     QTimer * m_poll_timer;
+    QTimer * m_status_timer;
     bool m_poll;
 };
 

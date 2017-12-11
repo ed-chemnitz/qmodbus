@@ -107,6 +107,10 @@ MainWindow::MainWindow( QWidget * _parent ) :
 
 	m_poll_timer = new QTimer( this );
 	connect( m_poll_timer, SIGNAL(timeout()), this, SLOT(sendModbusRequest()));
+
+	m_status_timer = new QTimer( this );
+	connect( m_status_timer, SIGNAL(timeout()), this, SLOT(resetStatus()));
+	m_status_timer->setSingleShot(true);
 }
 
 
@@ -468,7 +472,7 @@ void MainWindow::sendModbusRequest( void )
 			m_statusText->setText(
 					tr( "Values successfully sent" ) );
 			m_statusInd->setStyleSheet( "background: #0b0;" );
-			QTimer::singleShot( 2000, this, SLOT( resetStatus() ) );
+			m_status_timer->start( 2000 );
 		}
 		else
 		{
@@ -618,5 +622,5 @@ void MainWindow::setStatusError(const QString &msg)
 
     m_statusInd->setStyleSheet( "background: red;" );
 
-    QTimer::singleShot( 2000, this, SLOT( resetStatus() ) );
+    m_status_timer->start( 2000 );
 }
