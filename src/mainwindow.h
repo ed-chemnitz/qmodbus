@@ -89,11 +89,14 @@ private slots:
     void setStatusError(const QString &msg);
 
 private:
+    void keyPressEvent(QKeyEvent* event);
+    void keyReleaseEvent(QKeyEvent* event);
+
     Ui::MainWindowClass * ui;
     modbus_t * m_modbus;
     QWidget * m_statusInd;
     QLabel * m_statusText;
-
+    bool m_poll;
 };
 
 #endif // MAINWINDOW_H

@@ -47,7 +47,8 @@ extern MainWindow * globalMainWin;
 MainWindow::MainWindow( QWidget * _parent ) :
 	QMainWindow( _parent ),
 	ui( new Ui::MainWindowClass ),
-	m_modbus( NULL )
+	m_modbus( NULL ),
+	m_poll(false)
 {
 	ui->setupUi(this);
 
@@ -110,6 +111,28 @@ MainWindow::MainWindow( QWidget * _parent ) :
 MainWindow::~MainWindow()
 {
 	delete ui;
+}
+
+void MainWindow::keyPressEvent(QKeyEvent* event)
+{
+	if( event->key() == Qt::Key_Control )
+	{
+		//set flag to request polling
+		if( m_modbus != NULL )
+			m_poll = true;
+
+		ui->sendBtn->setText( tr("Poll") );
+	}
+}
+
+void MainWindow::keyReleaseEvent(QKeyEvent* event)
+{
+	if( event->key() == Qt::Key_Control )
+	{
+		m_poll = false;
+
+		ui->sendBtn->setText( tr("Send") );
+	}
 }
 
 void MainWindow::busMonitorAddItem( bool isRequest,
