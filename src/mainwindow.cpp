@@ -105,12 +105,12 @@ MainWindow::MainWindow( QWidget * _parent ) :
 	connect( t, SIGNAL(timeout()), this, SLOT(pollForDataOnBus()));
 	t->start( 5 );
 
-	m_poll_timer = new QTimer( this );
-	connect( m_poll_timer, SIGNAL(timeout()), this, SLOT(sendModbusRequest()));
+	m_pollTimer = new QTimer( this );
+	connect( m_pollTimer, SIGNAL(timeout()), this, SLOT(sendModbusRequest()));
 
-	m_status_timer = new QTimer( this );
-	connect( m_status_timer, SIGNAL(timeout()), this, SLOT(resetStatus()));
-	m_status_timer->setSingleShot(true);
+	m_statusTimer = new QTimer( this );
+	connect( m_statusTimer, SIGNAL(timeout()), this, SLOT(resetStatus()));
+	m_statusTimer->setSingleShot(true);
 }
 
 
@@ -127,7 +127,7 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
 		if( m_modbus != NULL )
 			m_poll = true;
 
-		if( ! m_poll_timer->isActive() )
+		if( ! m_pollTimer->isActive() )
 			ui->sendBtn->setText( tr("Poll") );
 	}
 }
@@ -138,7 +138,7 @@ void MainWindow::keyReleaseEvent(QKeyEvent* event)
 	{
 		m_poll = false;
 
-		if( ! m_poll_timer->isActive() )
+		if( ! m_pollTimer->isActive() )
 			ui->sendBtn->setText( tr("Send") );
 	}
 }
@@ -146,9 +146,9 @@ void MainWindow::keyReleaseEvent(QKeyEvent* event)
 void MainWindow::onSendButtonPress( void )
 {
 	//if already polling then stop
-	if( m_poll_timer->isActive() )
+	if( m_pollTimer->isActive() )
 	{
-		m_poll_timer->stop();
+		m_pollTimer->stop();
 		ui->sendBtn->setText( tr("Send") );
 	}
 	else
@@ -156,7 +156,7 @@ void MainWindow::onSendButtonPress( void )
 		//if polling requested then enable timer
 		if( m_poll )
 		{
-			m_poll_timer->start( 1000 );
+			m_pollTimer->start( 1000 );
 			ui->sendBtn->setText( tr("Stop") );
 		}
 
@@ -472,7 +472,7 @@ void MainWindow::sendModbusRequest( void )
 			m_statusText->setText(
 					tr( "Values successfully sent" ) );
 			m_statusInd->setStyleSheet( "background: #0b0;" );
-			m_status_timer->start( 2000 );
+			m_statusTimer->start( 2000 );
 		}
 		else
 		{
@@ -622,5 +622,5 @@ void MainWindow::setStatusError(const QString &msg)
 
     m_statusInd->setStyleSheet( "background: red;" );
 
-    m_status_timer->start( 2000 );
+    m_statusTimer->start( 2000 );
 }

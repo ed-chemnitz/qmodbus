@@ -98,8 +98,8 @@ private:
     modbus_t * m_modbus;
     QWidget * m_statusInd;
     QLabel * m_statusText;
-    QTimer * m_poll_timer;
-    QTimer * m_status_timer;
+    QTimer * m_pollTimer;
+    QTimer * m_statusTimer;
     bool m_poll;
 };
 
