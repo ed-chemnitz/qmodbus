@@ -1,5 +1,5 @@
 Source: qmodbus
-Section: electronic
+Section: electronics
 Priority: optional
 Maintainer: Jean-Samuel Reynaud <js.reynaud@gmail.com>
 Build-Depends: debhelper (>= 4.0.0), cmake, libqt4-dev
