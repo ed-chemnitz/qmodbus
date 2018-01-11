@@ -26,6 +26,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QTimer>
 
 #include "modbus.h"
 #include "ui_about.h"
@@ -79,6 +80,7 @@ private slots:
     void updateRegisterView( void );
     void enableHexView( void );
     void sendModbusRequest( void );
+    void onSendButtonPress( void );
     void pollForDataOnBus( void );
     void openBatchProcessor();
     void aboutQModBus( void );
@@ -89,11 +91,16 @@ private slots:
     void setStatusError(const QString &msg);
 
 private:
+    void keyPressEvent(QKeyEvent* event);
+    void keyReleaseEvent(QKeyEvent* event);
+
     Ui::MainWindowClass * ui;
     modbus_t * m_modbus;
     QWidget * m_statusInd;
     QLabel * m_statusText;
-
+    QTimer * m_pollTimer;
+    QTimer * m_statusTimer;
+    bool m_poll;
 };
 
 #endif // MAINWINDOW_H

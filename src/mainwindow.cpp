@@ -24,7 +24,6 @@
 
 #include <QSettings>
 #include <QDebug>
-#include <QTimer>
 #include <QScrollBar>
 
 #include <errno.h>
@@ -47,7 +46,8 @@ extern MainWindow * globalMainWin;
 MainWindow::MainWindow( QWidget * _parent ) :
 	QMainWindow( _parent ),
 	ui( new Ui::MainWindowClass ),
-	m_modbus( NULL )
+	m_modbus( NULL ),
+	m_poll(false)
 {
 	ui->setupUi(this);
 
@@ -76,7 +76,7 @@ MainWindow::MainWindow( QWidget * _parent ) :
 			this, SLOT( updateRegisterView() ) );
 
 	connect( ui->sendBtn, SIGNAL( clicked() ),
-			this, SLOT( sendModbusRequest() ) );
+			this, SLOT( onSendButtonPress() ) );
 
 	connect( ui->clearBusMonTable, SIGNAL( clicked() ),
 			this, SLOT( clearBusMonTable() ) );
@@ -104,12 +104,64 @@ MainWindow::MainWindow( QWidget * _parent ) :
 	QTimer * t = new QTimer( this );
 	connect( t, SIGNAL(timeout()), this, SLOT(pollForDataOnBus()));
 	t->start( 5 );
+
+	m_pollTimer = new QTimer( this );
+	connect( m_pollTimer, SIGNAL(timeout()), this, SLOT(sendModbusRequest()));
+
+	m_statusTimer = new QTimer( this );
+	connect( m_statusTimer, SIGNAL(timeout()), this, SLOT(resetStatus()));
+	m_statusTimer->setSingleShot(true);
 }
 
 
 MainWindow::~MainWindow()
 {
 	delete ui;
+}
+
+void MainWindow::keyPressEvent(QKeyEvent* event)
+{
+	if( event->key() == Qt::Key_Control )
+	{
+		//set flag to request polling
+		if( m_modbus != NULL )
+			m_poll = true;
+
+		if( ! m_pollTimer->isActive() )
+			ui->sendBtn->setText( tr("Poll") );
+	}
+}
+
+void MainWindow::keyReleaseEvent(QKeyEvent* event)
+{
+	if( event->key() == Qt::Key_Control )
+	{
+		m_poll = false;
+
+		if( ! m_pollTimer->isActive() )
+			ui->sendBtn->setText( tr("Send") );
+	}
+}
+
+void MainWindow::onSendButtonPress( void )
+{
+	//if already polling then stop
+	if( m_pollTimer->isActive() )
+	{
+		m_pollTimer->stop();
+		ui->sendBtn->setText( tr("Send") );
+	}
+	else
+	{
+		//if polling requested then enable timer
+		if( m_poll )
+		{
+			m_pollTimer->start( 1000 );
+			ui->sendBtn->setText( tr("Stop") );
+		}
+
+		sendModbusRequest();
+	}
 }
 
 void MainWindow::busMonitorAddItem( bool isRequest,
@@ -420,7 +472,7 @@ void MainWindow::sendModbusRequest( void )
 			m_statusText->setText(
 					tr( "Values successfully sent" ) );
 			m_statusInd->setStyleSheet( "background: #0b0;" );
-			QTimer::singleShot( 2000, this, SLOT( resetStatus() ) );
+			m_statusTimer->start( 2000 );
 		}
 		else
 		{
@@ -570,5 +622,5 @@ void MainWindow::setStatusError(const QString &msg)
 
     m_statusInd->setStyleSheet( "background: red;" );
 
-    QTimer::singleShot( 2000, this, SLOT( resetStatus() ) );
+    m_statusTimer->start( 2000 );
 }
