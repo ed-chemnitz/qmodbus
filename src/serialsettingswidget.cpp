@@ -5,8 +5,8 @@
 
 SerialSettingsWidget::SerialSettingsWidget(QWidget *parent) :
 	QWidget(parent),
-	ui(new Ui::SerialSettingsWidget)
-  , m_serialModbus( NULL )
+	ui(new Ui::SerialSettingsWidget),
+	m_serialModbus( NULL )
 {
 	ui->setupUi(this);
 	enableGuiItems(false);
@@ -112,6 +112,8 @@ void SerialSettingsWidget::changeSerialPort( int )
 		}
 
 		changeModbusInterface(port, parity);
+
+		emit serialPortActive(true);
 	}
 	else
 	{

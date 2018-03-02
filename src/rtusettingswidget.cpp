@@ -26,6 +26,6 @@ void RtuSettingsWidget::changeModbusInterface(const QString& port, char parity)
     {
         emit connectionError( tr( "Could not connect serial port!" ) );
 
-	releaseSerialModbus();
+        releaseSerialModbus();
     }
 }
