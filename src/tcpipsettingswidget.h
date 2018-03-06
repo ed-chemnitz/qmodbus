@@ -18,6 +18,7 @@ public:
     // IModbus interface
     virtual modbus_t *modbus() { return m_tcpModbus; }
     virtual int setupModbusPort();
+    void tcpConnect();
 
 protected:
     void changeModbusInterface(const QString& address, int portNbr);
@@ -26,9 +27,6 @@ protected:
 
 private slots:
     void on_cbEnabled_clicked(bool checked);
-    void on_btnApply_clicked();
-    void onEdNetworkAddressTextChanged(const QString &arg1);
-    void on_edPort_textChanged(const QString &arg1);
 
 signals:
     void tcpPortActive(bool val);
