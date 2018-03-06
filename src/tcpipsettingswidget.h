@@ -27,9 +27,6 @@ protected:
 
 private slots:
     void on_cbEnabled_clicked(bool checked);
-    void on_btnApply_clicked();
-    void onEdNetworkAddressTextChanged(const QString &arg1);
-    void on_edPort_textChanged(const QString &arg1);
 
 signals:
     void tcpPortActive(bool val);
