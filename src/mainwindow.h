@@ -100,6 +100,7 @@ private:
     QLabel * m_statusText;
     QTimer * m_pollTimer;
     QTimer * m_statusTimer;
+    bool m_tcpActive;
     bool m_poll;
 };
 

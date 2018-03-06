@@ -6,8 +6,8 @@
 
 TcpIpSettingsWidget::TcpIpSettingsWidget(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::TcpIpSettingsWidget)
-,   m_tcpModbus(0)
+    ui(new Ui::TcpIpSettingsWidget),
+    m_tcpModbus(0)
 {
     ui->setupUi(this);
     connect(ui->edNetworkAddress, SIGNAL(textChanged(QString)), this, SLOT(onEdNetworkAddressTextChanged(QString)));
@@ -59,9 +59,15 @@ void TcpIpSettingsWidget::enableGuiItems(bool checked)
 void TcpIpSettingsWidget::on_cbEnabled_clicked(bool checked)
 {
     enableGuiItems(checked);
+    emit tcpPortActive(checked);
 }
 
 void TcpIpSettingsWidget::on_btnApply_clicked()
+{
+    tcpConnect();
+}
+
+void TcpIpSettingsWidget::tcpConnect()
 {
     int portNbr = ui->edPort->text().toInt();
     ui->btnApply->setEnabled(false);

@@ -18,6 +18,7 @@ public:
     // IModbus interface
     virtual modbus_t *modbus() { return m_tcpModbus; }
     virtual int setupModbusPort();
+    void tcpConnect();
 
 protected:
     void changeModbusInterface(const QString& address, int portNbr);
