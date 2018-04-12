@@ -1,7 +1,7 @@
 QModBusTcp
 ==========
 Copyright (c) 2013      Karl-Heinz Reichel, ing-büro reichel-langer
-Copyright (c) 2009-2011 Tobias Doerffel, EDC Electronic Design Chemnitz GmbH
+Copyright (c) 2009-2018 Tobias Junghans, EDC Electronic Design Chemnitz GmbH
 
 http://www.techdrivers.de
 http://www.ed-chemnitz.de
@@ -38,7 +38,7 @@ traffic on the bus.
 Requirements
 ------------
 
-* Qt4
+* Qt5
 * GCC
 
 
@@ -54,5 +54,5 @@ Contact
 -------
 
 Any suggestions, patches etc. are welcome. Simply send a mail to
-tobias.doerffel (at) gmail (dot) com or
+totimaju (at) gmail (dot) com or
 kh.reichel@techdrives.de.

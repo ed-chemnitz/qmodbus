@@ -2,11 +2,7 @@ TARGET = qmodbus
 TEMPLATE = app
 VERSION = 0.1.0
 
-QT += gui
-
-greaterThan(QT_MAJOR_VERSION, 4) {
-    QT += widgets
-}
+QT += gui widgets
 
 SOURCES += src/main.cpp \
     src/mainwindow.cpp \
@@ -60,3 +56,7 @@ FORMS += forms/mainwindow.ui \
     forms/ipaddressctrl.ui
 
 RESOURCES += data/qmodbus.qrc
+
+RC_FILE += qmodbus.rc
+
+include(deployment.pri)

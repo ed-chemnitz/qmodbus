@@ -16,11 +16,11 @@ BEGIN
       VALUE "Comments",		"QModBus (http://qmodbus.sourceforge.net)\0"
       VALUE "CompanyName",	"EDC Electronic Design Chemnitz GmbH\ning-büro reichel-langer\0"
       VALUE "FileDescription",	"QModBus\0"
-      VALUE "FileVersion",	"@VERSION@\0"
-      VALUE "LegalCopyright",	"Copyright (c) 2009-2011 Tobias Doerffel / EDC Electronic Design Chemnitz GmbH\nCopyright (c) 2013 Karl-Heinz Reichel / ing-büro reichel-langer\nCopyright (c) 2009-2011 Tobias Doerffel / EDC Electronic Design Chemnitz GmbH\0"
+      VALUE "FileVersion",	"0.3.0\0"
+      VALUE "LegalCopyright",	"Copyright (c) 2009-2018 Tobias Junghans / EDC Electronic Design Chemnitz GmbH\nCopyright (c) 2013 Karl-Heinz Reichel / ing-büro reichel-langer\0"
       VALUE "OriginalFilename",	"qmodbus.exe\0"
       VALUE "ProductName",	"QModBus\0"
-      VALUE "ProductVersion",	"@VERSION@\0"
+      VALUE "ProductVersion",	"0.3.0\0"
     END
   END
 END
