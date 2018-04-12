@@ -85,7 +85,7 @@
          <property name="text">
           <string>This is QModBus %1.
 
-Copyright © 2009-2011 Tobias Doerffel, EDC Electronic Design Chemnitz GmbH</string>
+Copyright © 2009-2018 Tobias Junghans, EDC Electronic Design Chemnitz GmbH</string>
          </property>
          <property name="textFormat">
           <enum>Qt::PlainText</enum>

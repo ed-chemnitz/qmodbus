@@ -1,7 +1,7 @@
 /*
  * BatchProcessor.h - header file for BatchProcessor class
  *
- * Copyright (c) 2011-2014 Tobias Doerffel / Electronic Design Chemnitz
+ * Copyright (c) 2011-2014 Tobias Junghans / Electronic Design Chemnitz
  *
  * This file is part of QModBus - http://qmodbus.sourceforge.net
  *

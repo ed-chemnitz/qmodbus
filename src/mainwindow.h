@@ -1,7 +1,7 @@
 /*
  * mainwindow.h - header file for MainWindow class
  *
- * Copyright (c) 2009-2014 Tobias Doerffel / Electronic Design Chemnitz
+ * Copyright (c) 2009-2014 Tobias Junghans / Electronic Design Chemnitz
  *
  * This file is part of QModBus - http://qmodbus.sourceforge.net
  *
