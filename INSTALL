@@ -1,10 +1,10 @@
-QModBus can be easily built using CMake:
+QModBus can be easily built using Qt5 qmake:
 
 mkdir build
 cd build
-cmake ..
+qmake ..
 make
 
-and that's it. Alternatively open the project with QtCreator and build
+and that's it. Alternatively open the project with Qt Creator and build
 it with the according tool buttons.
 
