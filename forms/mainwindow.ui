@@ -257,7 +257,7 @@
             <bool>false</bool>
            </attribute>
            <attribute name="verticalHeaderDefaultSectionSize">
-            <number>18</number>
+            <number>21</number>
            </attribute>
            <column>
             <property name="text">
@@ -290,7 +290,7 @@
        <item row="0" column="0">
         <widget class="QLabel" name="label_10">
          <property name="text">
-          <string>Raw data received:</string>
+          <string>Raw Data</string>
          </property>
         </widget>
        </item>
@@ -408,7 +408,7 @@
           <number>75</number>
          </attribute>
          <attribute name="verticalHeaderDefaultSectionSize">
-          <number>18</number>
+          <number>21</number>
          </attribute>
          <column>
           <property name="text">
@@ -454,7 +454,7 @@
      <x>0</x>
      <y>0</y>
      <width>1021</width>
-     <height>25</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
