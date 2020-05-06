@@ -15,6 +15,12 @@ win32 {
 	INSTALLS += dlls qt5platforms
 }
 
+unix {
+	isEmpty(PREFIX) {
+		PREFIX = /usr/local/bin
+	}
+}
+
 target.path = $$PREFIX
 
 INSTALLS += target
