@@ -1,0 +1,44 @@
+---
+id: de.edchemnitz.QModbus
+runtime: org.kde.Platform
+runtime-version: "5.14"
+sdk: org.kde.Sdk
+command: qmodbus
+finish-args:
+- "--share=ipc"
+- "--share=network"
+- "--socket=x11"
+- "--socket=wayland"
+- "--socket=pulseaudio"
+- "--talk-name=org.freedesktop.Notifications"
+- "--device=dri"
+
+build-options:
+  no-debuginfo: true
+  strip: true
+
+cleanup:
+- "/cache"
+- "/man"
+- "/share/man"
+- "/lib/systemd"
+- "*.la"
+- "*.a"
+- "*.h"
+- "*.hpp"
+modules:
+- name: qmodbus
+  sources:
+  - type: git
+    url: https://github.com/ed-chemnitz/qmodbus.git
+    branch: master
+  buildsystem: qmake
+  builddir: true
+  post-install:
+  - mkdir /app/bin
+  - mv /app/qmodbus /app/bin
+  - install -m644  -D ../data/logo.svg /app/share/icons/hicolor/scalable/apps/de.edchemnitz.QModbus.svg
+  - sed -i -e 's:/usr/share/qmodbus/data/logo.png:de.edchemnitz.QModbus:g' ../qmodbus.desktop
+  - sed -i -e 's:/usr/share/qmodbus/build/qmodbus:/app/bin/qmodbus:g' ../qmodbus.desktop
+  - install -m644 -D ../qmodbus.desktop /app/share/applications/de.edchemnitz.QModbus.desktop
+
