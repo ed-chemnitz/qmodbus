@@ -32,6 +32,9 @@
 #include "ui_about.h"
 
 
+#define SENT		0
+#define RECEIVED	1
+
 class AboutDialog : public QDialog, public Ui::AboutDialog
 {
 public:
@@ -65,13 +68,13 @@ public:
                 uint16_t nb,
                 uint16_t expectedCRC,
                 uint16_t actualCRC );
-    void busMonitorRawData( uint8_t * data, uint8_t dataLen, bool addNewline );
+    void busMonitorRawData( uint8_t * data, uint8_t dataLen, bool addNewline, uint8_t direction );
 
     static void stBusMonitorAddItem( modbus_t * modbus,
             uint8_t isOut, uint8_t slave, uint8_t func, uint16_t addr,
             uint16_t nb, uint16_t expectedCRC, uint16_t actualCRC );
     static void stBusMonitorRawData( modbus_t * modbus, uint8_t * data,
-            uint8_t dataLen, uint8_t addNewline );
+            uint8_t dataLen, uint8_t addNewline,uint8_t );
 
 
 private slots:

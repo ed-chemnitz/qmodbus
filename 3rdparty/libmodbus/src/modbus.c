@@ -184,7 +184,18 @@ static int send_msg(modbus_t *ctx, uint8_t *msg, int msg_length)
         modbus_flush(ctx); // Without this we might receive junk
     }
 
+		
     msg_length = ctx->backend->send_msg_pre(msg, msg_length);
+
+	
+	//for( i = 0 ; i < msg_length; i++ )
+	//	printf("<%02X>",msg[i]);
+
+	/* -- BEGIN QMODBUS MODIFICATION -- */
+        if (ctx->monitor_raw_data) {
+		    ctx->monitor_raw_data(ctx, msg , msg_length, 1 , 0);
+        }
+                /* -- END QMODBUS MODIFICATION -- */
 
     if (ctx->debug) {
         for (i = 0; i < msg_length; i++)
@@ -435,7 +446,7 @@ int _modbus_receive_msg(modbus_t *ctx, uint8_t *msg, msg_type_t msg_type)
 
 		/* -- BEGIN QMODBUS MODIFICATION -- */
         if (ctx->monitor_raw_data) {
-		    ctx->monitor_raw_data(ctx, msg + msg_length, rc, ( step == _STEP_DATA && length_to_read-rc == 0 ) ? 1 : 0 );
+		    ctx->monitor_raw_data(ctx, msg + msg_length, rc, ( step == _STEP_DATA && length_to_read-rc == 0 ) ? 1 : 0 , 1 );
         }
                 /* -- END QMODBUS MODIFICATION -- */
 

@@ -218,19 +218,36 @@ void MainWindow::busMonitorAddItem( bool isRequest,
 }
 
 
-void MainWindow::busMonitorRawData( uint8_t * data, uint8_t dataLen, bool addNewline )
+void MainWindow::busMonitorRawData( uint8_t * data, uint8_t dataLen, bool addNewline, uint8_t direction )
 {
 	if( dataLen > 0 )
 	{
 		QString dump = ui->rawData->toPlainText();
+		static bool new_line_flag=1;
+							
+		// show if sent or received
+		if( new_line_flag )
+		{
+			new_line_flag = 0;
+			if( direction == SENT )
+				dump += "Req >> : ";
+			else
+				dump += "<< Resp: ";
+		}
+		
+		if( addNewline )
+			new_line_flag = 1;
+		
 		for( int i = 0; i < dataLen; ++i )
 		{
+
 			dump += QString().sprintf( "%.2x ", data[i] );
 		}
 		if( addNewline )
 		{
 			dump += "\n";
 		}
+		
 		ui->rawData->setPlainText( dump );
 		ui->rawData->verticalScrollBar()->setValue( 100000 );
 		ui->rawData->setLineWrapMode( QPlainTextEdit::NoWrap );
@@ -245,10 +262,10 @@ void MainWindow::stBusMonitorAddItem( modbus_t * modbus, uint8_t isRequest, uint
 }
 
 // static
-void MainWindow::stBusMonitorRawData( modbus_t * modbus, uint8_t * data, uint8_t dataLen, uint8_t addNewline )
+void MainWindow::stBusMonitorRawData( modbus_t * modbus, uint8_t * data, uint8_t dataLen, uint8_t addNewline , uint8_t direction)
 {
     Q_UNUSED(modbus);
-    globalMainWin->busMonitorRawData( data, dataLen, addNewline != 0 );
+    globalMainWin->busMonitorRawData( data, dataLen, addNewline != 0 , direction);
 }
 
 static QString descriptiveDataTypeName( int funcCode )

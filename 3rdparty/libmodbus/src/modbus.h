@@ -183,7 +183,7 @@ typedef void (*modbus_monitor_add_item_fnc_t)(modbus_t *ctx,
         uint8_t isOut, uint8_t slave, uint8_t func, uint16_t addr, uint16_t nb, 
         uint16_t expectedCRC, uint16_t actualCRC );
 typedef void (*modbus_monitor_raw_data_fnc_t)(modbus_t *ctx,
-        uint8_t *data, uint8_t dataLen, uint8_t addNewline);
+        uint8_t *data, uint8_t dataLen, uint8_t addNewline,uint8_t);
 
 MODBUS_API int modbus_set_slave(modbus_t *ctx, int slave);
 MODBUS_API int modbus_set_error_recovery(modbus_t *ctx, modbus_error_recovery_mode error_recovery);
