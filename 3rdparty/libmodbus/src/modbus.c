@@ -654,11 +654,6 @@ static int check_confirmation(modbus_t *ctx, uint8_t *req,
 			case MODBUS_FC_READ_DISCRETE_INPUTS:
 				num_items = rsp_nb_value * 8;
 				break;
-			case MODBUS_FC_WRITE_AND_READ_REGISTERS:
-			case MODBUS_FC_READ_HOLDING_REGISTERS:
-			case MODBUS_FC_READ_INPUT_REGISTERS:
-				num_items = rsp_nb_value/2;
-				break;
 			case MODBUS_FC_WRITE_MULTIPLE_COILS:
 			case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
 				addr = (rsp[offset + 1] << 8) | rsp[offset + 2];
