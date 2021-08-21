@@ -93,8 +93,6 @@ MainWindow::MainWindow( QWidget * _parent ) :
 	updateRequestPreview();
 	enableHexView();
 
-	ui->regTable->setColumnWidth( 0, 150 );
-
 	m_statusInd = new QWidget;
 	m_statusInd->setFixedSize( 16, 16 );
 	m_statusText = new QLabel;
@@ -380,7 +378,8 @@ void MainWindow::updateRegisterView( void )
 		ui->regTable->setItem( i, DataColumn, dataItem );
 	}
 
-	ui->regTable->setColumnWidth( 0, 150 );
+	if( rowCount > 0 )
+		ui->regTable->resizeColumnToContents(0);
 }
 
 
@@ -528,6 +527,8 @@ void MainWindow::sendModbusRequest( void )
 				ui->regTable->setItem( i, DataColumn,
 								dataItem );
 			}
+
+			ui->regTable->resizeColumnToContents(0);
 		}
 	}
 	else
