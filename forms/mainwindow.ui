@@ -257,7 +257,10 @@
          <item>
           <widget class="QTableWidget" name="regTable">
            <attribute name="horizontalHeaderDefaultSectionSize">
-            <number>60</number>
+            <number>100</number>
+           </attribute>
+           <attribute name="horizontalHeaderStretchLastSection">
+            <bool>true</bool>
            </attribute>
            <attribute name="verticalHeaderVisible">
             <bool>false</bool>
