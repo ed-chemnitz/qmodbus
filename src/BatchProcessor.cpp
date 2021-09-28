@@ -134,7 +134,7 @@ void BatchProcessor::runBatch()
 			const QStringList addresses = slaveCfg.split( ':' ).last().split( ',' );
 			foreach( const QString &addr, addresses )
 			{
-				out << QDateTime::currentDateTime().toTime_t() << slaveID << ", " << addr.toInt() << ", " << sendModbusRequest( slaveID, func, addr.toInt() ) << endl;
+				out << QDateTime::currentDateTime().toTime_t() << slaveID << ", " << addr.toInt() << ", " << sendModbusRequest( slaveID, func, addr.toInt() ) << Qt::endl;
 			}
 		}
 	}
