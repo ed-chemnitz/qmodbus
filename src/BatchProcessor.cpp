@@ -232,7 +232,7 @@ QString BatchProcessor::sendModbusRequest( int slaveID, int func, int addr )
 		{
 			int data = is16Bit ? dest16[i] : dest[i];
 
-			qs_num += QString().sprintf( b_hex ? "0x%04x" : "%d", data);
+			qs_num += QString::asprintf( b_hex ? "0x%04x" : "%d", data);
 		}
 
 		return qs_num;
