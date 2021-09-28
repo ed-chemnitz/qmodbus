@@ -59,7 +59,7 @@ void IPAddressCtrl::on_ipEd2_textChanged(const QString &arg1)
     emit textChanged(text());
 }
 
-void IPAddressCtrl::on_ipEd3_textChanged(const QString &arg1)
+void IPAddressCtrl::on_ipEd3_textChanged()
 {
     emit textChanged(text());
 }
