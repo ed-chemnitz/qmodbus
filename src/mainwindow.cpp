@@ -360,6 +360,8 @@ void MainWindow::updateRegisterView( void )
 		case MODBUS_FC_WRITE_MULTIPLE_COILS:
 		case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
 			rowCount = ui->numCoils->value();
+			ui->numCoils->setEnabled( true );
+			break;
 		default:
 			ui->numCoils->setEnabled( true );
 			break;
