@@ -194,11 +194,11 @@ void MainWindow::busMonitorAddItem( bool isRequest,
 	{
 		if( expectedCRC == actualCRC )
 		{
-			crcItem->setText( QString().sprintf( "%.4x", actualCRC ) );
+			crcItem->setText( QString::asprintf( "%.4x", actualCRC ) );
 		}
 		else
 		{
-			crcItem->setText( QString().sprintf( "%.4x (%.4x)", actualCRC, expectedCRC ) );
+			crcItem->setText( QString::asprintf( "%.4x (%.4x)", actualCRC, expectedCRC ) );
 			crcItem->setForeground( Qt::red );
 		}
 	}
@@ -241,7 +241,7 @@ void MainWindow::busMonitorRawData( uint8_t * data, uint8_t dataLen, bool addNew
 		for( int i = 0; i < dataLen; ++i )
 		{
 
-			dump += QString().sprintf( "%.2x ", data[i] );
+			dump += QString::asprintf( "%.2x ", data[i] );
 		}
 		if( addNewline )
 		{
@@ -320,7 +320,7 @@ void MainWindow::updateRequestPreview( void )
 	if( func == MODBUS_FC_WRITE_SINGLE_COIL || func == MODBUS_FC_WRITE_SINGLE_REGISTER )
 	{
 		ui->requestPreview->setText(
-			QString().sprintf( "%.2x  %.2x  %.2x %.2x ",
+			QString::asprintf( "%.2x  %.2x  %.2x %.2x ",
 					slave,
 					func,
 					addr >> 8,
@@ -329,7 +329,7 @@ void MainWindow::updateRequestPreview( void )
 	else
 	{
 		ui->requestPreview->setText(
-			QString().sprintf( "%.2x  %.2x  %.2x %.2x  %.2x %.2x",
+			QString::asprintf( "%.2x  %.2x  %.2x %.2x  %.2x %.2x",
 					slave,
 					func,
 					addr >> 8,
@@ -360,6 +360,8 @@ void MainWindow::updateRegisterView( void )
 		case MODBUS_FC_WRITE_MULTIPLE_COILS:
 		case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
 			rowCount = ui->numCoils->value();
+			ui->numCoils->setEnabled( true );
+			break;
 		default:
 			ui->numCoils->setEnabled( true );
 			break;
@@ -511,7 +513,7 @@ void MainWindow::sendModbusRequest( void )
 				QTableWidgetItem * addrItem =
 					new QTableWidgetItem(
 						QString::number( addr+i ) );
-				qs_num.sprintf( b_hex ? "0x%04x" : "%d", data);
+				qs_num = QString::asprintf( b_hex ? "0x%04x" : "%d", data);
 				QTableWidgetItem * dataItem =
 					new QTableWidgetItem( qs_num );
 				dtItem->setFlags( dtItem->flags() &
